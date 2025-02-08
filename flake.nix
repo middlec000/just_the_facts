@@ -16,7 +16,11 @@
           buildInputs = [
             pkgs.nodejs-18_x
             pkgs.yarn
+            pkgs.nodePackages.serve
           ];
+          shellHook = ''
+            export NODE_OPTIONS=--openssl-legacy-provider
+          '';
         };
       });
 }
