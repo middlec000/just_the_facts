@@ -1,26 +1,39 @@
 {
-  description = "Development environment for social-media-app";
+  description = "Just the Facts - A social media meets Wikipedia web application";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = nixpkgs.legacyPackages.${system};
       in
       {
-        devShell = pkgs.mkShell {
-          buildInputs = [
-            pkgs.nodejs-18_x
-            pkgs.yarn
-            pkgs.nodePackages.serve
+        devShells.default = pkgs.mkShell {
+          buildInputs = with pkgs; [
+            nodejs_20
+            nodePackages.npm
+            nodePackages.typescript
+            nodePackages.prettier
+            nodePackages.eslint
           ];
+
           shellHook = ''
-            export NODE_OPTIONS=--openssl-legacy-provider
+            echo "Welcome to Just the Facts development environment!"
+            echo "Use 'npm run dev' to start the development server"
+            echo "Use 'npm run build' to build the production version"
+            echo "Use 'npm run start' to start the production server"
           '';
         };
-      });
+      }
+    );
 }
