@@ -4,10 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { Statement } from "@/lib/types";
 import { VoteButtons } from "@/components/VoteButtons";
+import { PostedBy } from "@/components/PostedBy";
 
 interface StatementWithCounts extends Statement {
   forCount: number;
   againstCount: number;
+  userName: string;
 }
 
 interface StatementListProps {
@@ -104,6 +106,7 @@ export function StatementList({ statements, allTags }: StatementListProps) {
                   stopPropagation
                 />
               </div>
+              <PostedBy userName={statement.userName} createdAt={statement.createdAt} />
             </Link>
           ))}
         </div>

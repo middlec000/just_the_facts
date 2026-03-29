@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { Argument } from "@/lib/types";
 import { VoteButtons } from "@/components/VoteButtons";
+import { PostedBy } from "@/components/PostedBy";
 
 interface ArgumentCardProps {
   argument: Argument;
+  userName: string;
 }
 
-export function ArgumentCard({ argument }: ArgumentCardProps) {
+export function ArgumentCard({ argument, userName }: ArgumentCardProps) {
   const isFor = argument.stance === "for";
 
   return (
@@ -30,6 +32,7 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
         initialDownvotes={argument.downvotes}
         stopPropagation
       />
+      <PostedBy userName={userName} createdAt={argument.createdAt} />
     </Link>
   );
 }

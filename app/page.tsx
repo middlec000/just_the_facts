@@ -1,4 +1,4 @@
-import { statements, getArgumentsByStatementId, getAllTags } from "@/lib/mock-data";
+import { statements, getArgumentsByStatementId, getAllTags, getUserById } from "@/lib/mock-data";
 import { StatementList } from "@/components/StatementList";
 
 export default function HomePage() {
@@ -6,10 +6,12 @@ export default function HomePage() {
 
   const statementsWithCounts = statements.map((statement) => {
     const args = getArgumentsByStatementId(statement.id);
+    const user = getUserById(statement.userId);
     return {
       ...statement,
       forCount: args.filter((a) => a.stance === "for").length,
       againstCount: args.filter((a) => a.stance === "against").length,
+      userName: user?.name ?? "Unknown",
     };
   });
 

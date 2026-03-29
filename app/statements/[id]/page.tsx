@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getStatementById, getArgumentsByStatementId } from "@/lib/mock-data";
+import { getStatementById, getArgumentsByStatementId, getUserById } from "@/lib/mock-data";
 import { ArgumentCard } from "@/components/ArgumentCard";
+import { PostedBy } from "@/components/PostedBy";
 
 interface StatementPageProps {
   params: Promise<{ id: string }>;
@@ -18,6 +19,7 @@ export default async function StatementPage({ params }: StatementPageProps) {
   const allArguments = getArgumentsByStatementId(statement.id);
   const argumentsFor = allArguments.filter((a) => a.stance === "for");
   const argumentsAgainst = allArguments.filter((a) => a.stance === "against");
+  const statementUser = getUserById(statement.userId);
 
   return (
     <div>
@@ -46,6 +48,10 @@ export default async function StatementPage({ params }: StatementPageProps) {
             ))}
           </div>
         )}
+        <PostedBy
+          userName={statementUser?.name ?? "Unknown"}
+          createdAt={statement.createdAt}
+        />
       </section>
 
       {/* Two-column arguments layout */}
@@ -59,7 +65,11 @@ export default async function StatementPage({ params }: StatementPageProps) {
           <div className="space-y-3">
             {argumentsFor.length > 0 ? (
               argumentsFor.map((arg) => (
-                <ArgumentCard key={arg.id} argument={arg} />
+                <ArgumentCard
+                  key={arg.id}
+                  argument={arg}
+                  userName={getUserById(arg.userId)?.name ?? "Unknown"}
+                />
               ))
             ) : (
               <p className="text-sm text-neutral-400 py-8 text-center">
@@ -78,7 +88,11 @@ export default async function StatementPage({ params }: StatementPageProps) {
           <div className="space-y-3">
             {argumentsAgainst.length > 0 ? (
               argumentsAgainst.map((arg) => (
-                <ArgumentCard key={arg.id} argument={arg} />
+                <ArgumentCard
+                  key={arg.id}
+                  argument={arg}
+                  userName={getUserById(arg.userId)?.name ?? "Unknown"}
+                />
               ))
             ) : (
               <p className="text-sm text-neutral-400 py-8 text-center">

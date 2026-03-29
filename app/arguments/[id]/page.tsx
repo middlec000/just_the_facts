@@ -4,8 +4,10 @@ import {
   getArgumentById,
   getEvidenceByArgumentId,
   getStatementForArgument,
+  getUserById,
 } from "@/lib/mock-data";
 import { EvidenceItem } from "@/components/EvidenceItem";
+import { PostedBy } from "@/components/PostedBy";
 
 interface ArgumentPageProps {
   params: Promise<{ id: string }>;
@@ -22,6 +24,7 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
   const statement = getStatementForArgument(argument.id);
   const evidenceList = getEvidenceByArgumentId(argument.id);
   const isFor = argument.stance === "for";
+  const argumentUser = getUserById(argument.userId);
 
   return (
     <div className="max-w-3xl">
@@ -62,6 +65,10 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
         </h1>
 
         <p className="text-neutral-700 leading-relaxed">{argument.summary}</p>
+        <PostedBy
+          userName={argumentUser?.name ?? "Unknown"}
+          createdAt={argument.createdAt}
+        />
 
         {/* Parent statement reference */}
         {statement && (
@@ -85,7 +92,11 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
         {evidenceList.length > 0 ? (
           <div className="space-y-3">
             {evidenceList.map((ev) => (
-              <EvidenceItem key={ev.id} evidence={ev} />
+              <EvidenceItem
+                key={ev.id}
+                evidence={ev}
+                userName={getUserById(ev.userId)?.name ?? "Unknown"}
+              />
             ))}
           </div>
         ) : (

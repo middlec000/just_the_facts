@@ -1,7 +1,9 @@
 import { Evidence, SourceType } from "@/lib/types";
+import { PostedBy } from "@/components/PostedBy";
 
 interface EvidenceItemProps {
   evidence: Evidence;
+  userName: string;
 }
 
 const sourceTypeLabels: Record<SourceType, string> = {
@@ -13,7 +15,7 @@ const sourceTypeLabels: Record<SourceType, string> = {
   other: "Other",
 };
 
-export function EvidenceItem({ evidence }: EvidenceItemProps) {
+export function EvidenceItem({ evidence, userName }: EvidenceItemProps) {
   return (
     <div className="border border-neutral-200 rounded-lg p-4">
       <div className="flex items-start justify-between gap-4 mb-2">
@@ -35,6 +37,7 @@ export function EvidenceItem({ evidence }: EvidenceItemProps) {
           View source &#8599;
         </a>
       )}
+      <PostedBy userName={userName} createdAt={evidence.createdAt} />
     </div>
   );
 }
