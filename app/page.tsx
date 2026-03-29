@@ -10,18 +10,29 @@ export default function HomePage() {
     const user = getUserById(statement.userId);
     const forArgs = args.filter((a) => a.stance === "for");
     const againstArgs = args.filter((a) => a.stance === "against");
+    const allEvidence = args.flatMap((a) => getEvidenceByArgumentId(a.id));
     const forEvidenceUpvotes = forArgs
       .flatMap((a) => getEvidenceByArgumentId(a.id))
       .reduce((s, e) => s + e.upvotes, 0);
     const againstEvidenceUpvotes = againstArgs
       .flatMap((a) => getEvidenceByArgumentId(a.id))
       .reduce((s, e) => s + e.upvotes, 0);
+    const totalEvidenceUpvotes = forEvidenceUpvotes + againstEvidenceUpvotes;
+    // Latest activity = newest createdAt across statement, arguments, evidence
+    const allDates = [
+      statement.createdAt,
+      ...args.map((a) => a.createdAt),
+      ...allEvidence.map((e) => e.createdAt),
+    ];
+    const latestActivityAt = allDates.reduce((a, b) => (a > b ? a : b));
     return {
       ...statement,
       forCount: forArgs.length,
       againstCount: againstArgs.length,
       forEvidenceUpvotes,
       againstEvidenceUpvotes,
+      totalEvidenceUpvotes,
+      latestActivityAt,
       userName: user?.name ?? "Unknown",
     };
   });

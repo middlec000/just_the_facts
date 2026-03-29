@@ -7,11 +7,24 @@ import { HeartButton } from "@/components/HeartButton";
 import { PostedBy } from "@/components/PostedBy";
 import { EvidenceSupportBar } from "@/components/EvidenceSupportBar";
 
+type SortField = "date" | "alpha" | "activity" | "hearts" | "evidence";
+type SortDir = "asc" | "desc";
+
+const SORT_OPTIONS: { field: SortField; label: string; defaultDir: SortDir }[] = [
+  { field: "date",     label: "Date posted",     defaultDir: "desc" },
+  { field: "alpha",    label: "Alphabetical",     defaultDir: "asc"  },
+  { field: "activity", label: "Latest activity",  defaultDir: "desc" },
+  { field: "hearts",   label: "Hearts",           defaultDir: "desc" },
+  { field: "evidence", label: "Evidence upvotes",  defaultDir: "desc" },
+];
+
 interface StatementWithCounts extends Statement {
   forCount: number;
   againstCount: number;
   forEvidenceUpvotes: number;
   againstEvidenceUpvotes: number;
+  totalEvidenceUpvotes: number;
+  latestActivityAt: string;
   userName: string;
 }
 
@@ -22,17 +35,40 @@ interface StatementListProps {
 
 export function StatementList({ statements, allTags }: StatementListProps) {
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  function handleFieldChange(field: SortField) {
+    if (field === sortField) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(SORT_OPTIONS.find((o) => o.field === field)!.defaultDir);
+    }
+  }
 
   const filtered =
     activeTag === null
       ? statements
       : statements.filter((s) => s.tags.includes(activeTag));
 
+  const sorted = [...filtered].sort((a, b) => {
+    let cmp = 0;
+    switch (sortField) {
+      case "date":     cmp = a.createdAt.localeCompare(b.createdAt); break;
+      case "alpha":    cmp = a.text.localeCompare(b.text); break;
+      case "activity": cmp = a.latestActivityAt.localeCompare(b.latestActivityAt); break;
+      case "hearts":   cmp = a.hearts - b.hearts; break;
+      case "evidence": cmp = a.totalEvidenceUpvotes - b.totalEvidenceUpvotes; break;
+    }
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
   return (
     <div>
       {/* Tag filter chips */}
       {allTags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-4">
           <button
             onClick={() => setActiveTag(null)}
             className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
@@ -59,14 +95,40 @@ export function StatementList({ statements, allTags }: StatementListProps) {
         </div>
       )}
 
+      {/* Sort controls */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-6">
+        <span className="text-xs text-neutral-400 mr-1 shrink-0">Sort:</span>
+        {SORT_OPTIONS.map((opt) => {
+          const active = sortField === opt.field;
+          return (
+            <button
+              key={opt.field}
+              onClick={() => handleFieldChange(opt.field)}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md border text-xs font-medium transition-colors ${
+                active
+                  ? "bg-neutral-900 text-white border-neutral-900"
+                  : "bg-white text-neutral-600 border-neutral-300 hover:border-neutral-500"
+              }`}
+            >
+              {opt.label}
+              {active && (
+                <span className="text-[10px] leading-none">
+                  {sortDir === "asc" ? "↑" : "↓"}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Statement cards */}
-      {filtered.length === 0 ? (
+      {sorted.length === 0 ? (
         <p className="text-sm text-neutral-400 py-8 text-center">
           No statements found{activeTag ? ` for #${activeTag}` : ""}.
         </p>
       ) : (
         <div className="space-y-4">
-          {filtered.map((statement) => (
+          {sorted.map((statement) => (
             <Link
               key={statement.id}
               href={`/statements/${statement.id}`}
