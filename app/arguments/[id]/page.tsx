@@ -5,9 +5,10 @@ import {
   getEvidenceByArgumentId,
   getStatementForArgument,
   getUserById,
-} from "@/lib/mock-data";
+} from "@/lib/store";
 import { EvidenceItem } from "@/components/EvidenceItem";
 import { PostedBy } from "@/components/PostedBy";
+import { AddEvidenceDialog } from "@/components/AddEvidenceDialog";
 
 interface ArgumentPageProps {
   params: Promise<{ id: string }>;
@@ -86,9 +87,15 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
 
       {/* Evidence section */}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
-          Evidence ({evidenceList.length})
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+            Evidence ({evidenceList.length})
+          </h2>
+          <AddEvidenceDialog
+            argumentId={argument.id}
+            statementId={statement?.id ?? ""}
+          />
+        </div>
         {evidenceList.length > 0 ? (
           <div className="space-y-3">
             {evidenceList.map((ev) => (

@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getStatementById, getArgumentsByStatementId, getUserById } from "@/lib/mock-data";
+import { getStatementById, getArgumentsByStatementId, getUserById } from "@/lib/store";
 import { ArgumentCard } from "@/components/ArgumentCard";
 import { PostedBy } from "@/components/PostedBy";
+import { AddArgumentDialog } from "@/components/AddArgumentDialog";
 
 interface StatementPageProps {
   params: Promise<{ id: string }>;
@@ -62,6 +63,9 @@ export default async function StatementPage({ params }: StatementPageProps) {
             <span className="w-2 h-2 rounded-full bg-for" />
             Arguments For ({argumentsFor.length})
           </h2>
+          <div className="mb-4">
+            <AddArgumentDialog statementId={statement.id} defaultStance="for" />
+          </div>
           <div className="space-y-3">
             {argumentsFor.length > 0 ? (
               argumentsFor.map((arg) => (
@@ -85,6 +89,9 @@ export default async function StatementPage({ params }: StatementPageProps) {
             <span className="w-2 h-2 rounded-full bg-against" />
             Arguments Against ({argumentsAgainst.length})
           </h2>
+          <div className="mb-4">
+            <AddArgumentDialog statementId={statement.id} defaultStance="against" />
+          </div>
           <div className="space-y-3">
             {argumentsAgainst.length > 0 ? (
               argumentsAgainst.map((arg) => (
