@@ -8,6 +8,7 @@ import {
 } from "@/lib/store";
 import { EvidenceItem } from "@/components/EvidenceItem";
 import { PostedBy } from "@/components/PostedBy";
+import { HeartButton } from "@/components/HeartButton";
 import { AddEvidenceDialog } from "@/components/AddEvidenceDialog";
 
 interface ArgumentPageProps {
@@ -66,10 +67,13 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
         </h1>
 
         <p className="text-neutral-700 leading-relaxed">{argument.summary}</p>
-        <PostedBy
-          userName={argumentUser?.name ?? "Unknown"}
-          createdAt={argument.createdAt}
-        />
+        <div className="flex items-center gap-3 mt-3">
+          <HeartButton id={argument.id} initialHearts={argument.hearts} />
+          <PostedBy
+            userName={argumentUser?.name ?? "Unknown"}
+            createdAt={argument.createdAt}
+          />
+        </div>
 
         {/* Parent statement reference */}
         {statement && (

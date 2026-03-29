@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Statement } from "@/lib/types";
-import { VoteButtons } from "@/components/VoteButtons";
+import { HeartButton } from "@/components/HeartButton";
 import { PostedBy } from "@/components/PostedBy";
 
 interface StatementWithCounts extends Statement {
@@ -99,10 +99,9 @@ export function StatementList({ statements, allTags }: StatementListProps) {
                     {statement.againstCount !== 1 && "s"} against
                   </span>
                 </div>
-                <VoteButtons
+                <HeartButton
                   id={statement.id}
-                  initialUpvotes={statement.upvotes}
-                  initialDownvotes={statement.downvotes}
+                  initialHearts={statement.hearts}
                   stopPropagation
                 />
               </div>

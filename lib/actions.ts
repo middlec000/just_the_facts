@@ -29,8 +29,7 @@ export async function createStatement(formData: FormData) {
     id: crypto.randomUUID(),
     text,
     tags,
-    upvotes: 0,
-    downvotes: 0,
+    hearts: 0,
     userId: CURRENT_USER_ID,
     createdAt: new Date().toISOString(),
   };
@@ -60,8 +59,7 @@ export async function createArgument(formData: FormData) {
     stance,
     title,
     summary,
-    upvotes: 0,
-    downvotes: 0,
+    hearts: 0,
     userId: CURRENT_USER_ID,
     createdAt: new Date().toISOString(),
   };
@@ -97,6 +95,8 @@ export async function createEvidence(formData: FormData) {
     description,
     sourceUrl,
     sourceType,
+    upvotes: 0,
+    downvotes: 0,
     userId: CURRENT_USER_ID,
     createdAt: new Date().toISOString(),
   };

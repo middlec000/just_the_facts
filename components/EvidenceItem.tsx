@@ -1,4 +1,5 @@
 import { Evidence, SourceType } from "@/lib/types";
+import { VoteButtons } from "@/components/VoteButtons";
 import { PostedBy } from "@/components/PostedBy";
 
 interface EvidenceItemProps {
@@ -37,7 +38,14 @@ export function EvidenceItem({ evidence, userName }: EvidenceItemProps) {
           View source &#8599;
         </a>
       )}
-      <PostedBy userName={userName} createdAt={evidence.createdAt} />
+      <div className="flex items-center justify-between gap-4 mt-3 flex-wrap">
+        <VoteButtons
+          id={evidence.id}
+          initialUpvotes={evidence.upvotes}
+          initialDownvotes={evidence.downvotes}
+        />
+        <PostedBy userName={userName} createdAt={evidence.createdAt} />
+      </div>
     </div>
   );
 }
