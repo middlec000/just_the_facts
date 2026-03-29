@@ -1,4 +1,4 @@
-import { getStatements, getArgumentsByStatementId, getAllTags, getUserById } from "@/lib/store";
+import { getStatements, getArgumentsByStatementId, getEvidenceByArgumentId, getAllTags, getUserById } from "@/lib/store";
 import { StatementList } from "@/components/StatementList";
 import { AddStatementDialog } from "@/components/AddStatementDialog";
 
@@ -8,10 +8,20 @@ export default function HomePage() {
   const statementsWithCounts = getStatements().map((statement) => {
     const args = getArgumentsByStatementId(statement.id);
     const user = getUserById(statement.userId);
+    const forArgs = args.filter((a) => a.stance === "for");
+    const againstArgs = args.filter((a) => a.stance === "against");
+    const forEvidenceUpvotes = forArgs
+      .flatMap((a) => getEvidenceByArgumentId(a.id))
+      .reduce((s, e) => s + e.upvotes, 0);
+    const againstEvidenceUpvotes = againstArgs
+      .flatMap((a) => getEvidenceByArgumentId(a.id))
+      .reduce((s, e) => s + e.upvotes, 0);
     return {
       ...statement,
-      forCount: args.filter((a) => a.stance === "for").length,
-      againstCount: args.filter((a) => a.stance === "against").length,
+      forCount: forArgs.length,
+      againstCount: againstArgs.length,
+      forEvidenceUpvotes,
+      againstEvidenceUpvotes,
       userName: user?.name ?? "Unknown",
     };
   });

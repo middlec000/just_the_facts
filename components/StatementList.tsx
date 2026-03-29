@@ -5,10 +5,13 @@ import Link from "next/link";
 import { Statement } from "@/lib/types";
 import { HeartButton } from "@/components/HeartButton";
 import { PostedBy } from "@/components/PostedBy";
+import { EvidenceSupportBar } from "@/components/EvidenceSupportBar";
 
 interface StatementWithCounts extends Statement {
   forCount: number;
   againstCount: number;
+  forEvidenceUpvotes: number;
+  againstEvidenceUpvotes: number;
   userName: string;
 }
 
@@ -86,6 +89,14 @@ export function StatementList({ statements, allTags }: StatementListProps) {
                   ))}
                 </div>
               )}
+
+              {/* Evidence support bar */}
+              <div className="mb-3">
+                <EvidenceSupportBar
+                  forUpvotes={statement.forEvidenceUpvotes}
+                  againstUpvotes={statement.againstEvidenceUpvotes}
+                />
+              </div>
 
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex gap-4 text-sm">

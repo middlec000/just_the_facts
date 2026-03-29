@@ -4,6 +4,7 @@ import { getStatementById, getArgumentsByStatementId, getEvidenceByArgumentId, g
 import { ArgumentCard } from "@/components/ArgumentCard";
 import { PostedBy } from "@/components/PostedBy";
 import { AddArgumentDialog } from "@/components/AddArgumentDialog";
+import { EvidenceSupportBar } from "@/components/EvidenceSupportBar";
 
 interface StatementPageProps {
   params: Promise<{ id: string }>;
@@ -30,6 +31,13 @@ export default async function StatementPage({ params }: StatementPageProps) {
       downvotes: ev.reduce((s, e) => s + e.downvotes, 0),
     };
   }
+
+  const forEvidenceUpvotes = argumentsFor
+    .flatMap((a) => getEvidenceByArgumentId(a.id))
+    .reduce((s, e) => s + e.upvotes, 0);
+  const againstEvidenceUpvotes = argumentsAgainst
+    .flatMap((a) => getEvidenceByArgumentId(a.id))
+    .reduce((s, e) => s + e.upvotes, 0);
 
   return (
     <div>
@@ -62,6 +70,12 @@ export default async function StatementPage({ params }: StatementPageProps) {
           userName={statementUser?.name ?? "Unknown"}
           createdAt={statement.createdAt}
         />
+        <div className="mt-4">
+          <EvidenceSupportBar
+            forUpvotes={forEvidenceUpvotes}
+            againstUpvotes={againstEvidenceUpvotes}
+          />
+        </div>
       </section>
 
       {/* Two-column arguments layout */}
