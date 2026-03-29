@@ -9,8 +9,23 @@ export const statements: Statement[] = [
   {
     id: "stmt-1",
     text: "Humans have landed on the Moon",
+    tags: ["space", "history", "science"],
     userId: "user-1",
     createdAt: "2025-01-15T10:00:00Z",
+  },
+  {
+    id: "stmt-2",
+    text: "Regular physical exercise reduces the risk of cardiovascular disease",
+    tags: ["health", "science", "medicine"],
+    userId: "user-2",
+    createdAt: "2025-02-01T10:00:00Z",
+  },
+  {
+    id: "stmt-3",
+    text: "Social media use is linked to increased rates of anxiety in teenagers",
+    tags: ["health", "technology", "society"],
+    userId: "user-1",
+    createdAt: "2025-02-10T10:00:00Z",
   },
 ];
 
@@ -237,4 +252,11 @@ export function getStatementForArgument(
 
 export function getUserById(id: string): User | undefined {
   return users.find((u) => u.id === id);
+}
+
+/** Returns every unique tag used across all statements, sorted alphabetically. */
+export function getAllTags(): string[] {
+  const tagSet = new Set<string>();
+  statements.forEach((s) => s.tags.forEach((t) => tagSet.add(t)));
+  return Array.from(tagSet).sort();
 }

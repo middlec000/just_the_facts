@@ -32,6 +32,20 @@ export default async function StatementPage({ params }: StatementPageProps) {
         <h1 className="text-2xl md:text-3xl font-bold text-neutral-900">
           &ldquo;{statement.text}&rdquo;
         </h1>
+
+        {/* Hashtags */}
+        {statement.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {statement.tags.map((tag) => (
+              <span
+                key={tag}
+                className="px-2.5 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 border border-neutral-200"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Two-column arguments layout */}

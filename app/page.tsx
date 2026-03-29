@@ -1,7 +1,18 @@
-import Link from "next/link";
-import { statements, getArgumentsByStatementId } from "@/lib/mock-data";
+import { statements, getArgumentsByStatementId, getAllTags } from "@/lib/mock-data";
+import { StatementList } from "@/components/StatementList";
 
 export default function HomePage() {
+  const allTags = getAllTags();
+
+  const statementsWithCounts = statements.map((statement) => {
+    const args = getArgumentsByStatementId(statement.id);
+    return {
+      ...statement,
+      forCount: args.filter((a) => a.stance === "for").length,
+      againstCount: args.filter((a) => a.stance === "against").length,
+    };
+  });
+
   return (
     <div>
       <section className="mb-8">
@@ -11,36 +22,7 @@ export default function HomePage() {
         </p>
       </section>
 
-      <div className="space-y-4">
-        {statements.map((statement) => {
-          const args = getArgumentsByStatementId(statement.id);
-          const forCount = args.filter((a) => a.stance === "for").length;
-          const againstCount = args.filter(
-            (a) => a.stance === "against",
-          ).length;
-
-          return (
-            <Link
-              key={statement.id}
-              href={`/statements/${statement.id}`}
-              className="block p-6 rounded-lg border border-neutral-200 bg-white hover:shadow-md transition-shadow"
-            >
-              <h2 className="text-lg font-semibold text-neutral-900 mb-3">
-                &ldquo;{statement.text}&rdquo;
-              </h2>
-              <div className="flex gap-4 text-sm">
-                <span className="text-for">
-                  {forCount} argument{forCount !== 1 && "s"} for
-                </span>
-                <span className="text-neutral-300">|</span>
-                <span className="text-against">
-                  {againstCount} argument{againstCount !== 1 && "s"} against
-                </span>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+      <StatementList statements={statementsWithCounts} allTags={allTags} />
     </div>
   );
 }

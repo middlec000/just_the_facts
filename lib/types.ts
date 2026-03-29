@@ -6,6 +6,8 @@ export interface User {
 export interface Statement {
   id: string;
   text: string;
+  /** Hashtag topics (stored without the # prefix, e.g. "science") */
+  tags: string[];
   userId: string;
   createdAt: string;
 }
