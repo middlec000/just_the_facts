@@ -1,0 +1,99 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import {
+  getArgumentById,
+  getEvidenceByArgumentId,
+  getStatementForArgument,
+} from "@/lib/mock-data";
+import { EvidenceItem } from "@/components/EvidenceItem";
+
+interface ArgumentPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function ArgumentPage({ params }: ArgumentPageProps) {
+  const { id } = await params;
+  const argument = getArgumentById(id);
+
+  if (!argument) {
+    notFound();
+  }
+
+  const statement = getStatementForArgument(argument.id);
+  const evidenceList = getEvidenceByArgumentId(argument.id);
+  const isFor = argument.stance === "for";
+
+  return (
+    <div className="max-w-3xl">
+      {/* Breadcrumb navigation */}
+      <nav className="text-sm text-neutral-400 mb-6 flex items-center gap-2">
+        <Link href="/" className="hover:text-neutral-600">
+          Home
+        </Link>
+        <span>/</span>
+        {statement && (
+          <>
+            <Link
+              href={`/statements/${statement.id}`}
+              className="hover:text-neutral-600"
+            >
+              Statement
+            </Link>
+            <span>/</span>
+          </>
+        )}
+        <span className="text-neutral-600">Argument</span>
+      </nav>
+
+      {/* Argument header */}
+      <section className="mb-8">
+        <span
+          className={`inline-block text-xs font-semibold uppercase tracking-wide px-2 py-1 rounded mb-3 ${
+            isFor
+              ? "bg-for-bg text-for border border-for-border"
+              : "bg-against-bg text-against border border-against-border"
+          }`}
+        >
+          {isFor ? "Argument For" : "Argument Against"}
+        </span>
+
+        <h1 className="text-2xl font-bold text-neutral-900 mb-3">
+          {argument.title}
+        </h1>
+
+        <p className="text-neutral-700 leading-relaxed">{argument.summary}</p>
+
+        {/* Parent statement reference */}
+        {statement && (
+          <div className="mt-4 p-3 rounded border border-neutral-200 bg-neutral-50 text-sm">
+            <span className="text-neutral-400">Re: </span>
+            <Link
+              href={`/statements/${statement.id}`}
+              className="text-neutral-700 hover:underline"
+            >
+              &ldquo;{statement.text}&rdquo;
+            </Link>
+          </div>
+        )}
+      </section>
+
+      {/* Evidence section */}
+      <section>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-4">
+          Evidence ({evidenceList.length})
+        </h2>
+        {evidenceList.length > 0 ? (
+          <div className="space-y-3">
+            {evidenceList.map((ev) => (
+              <EvidenceItem key={ev.id} evidence={ev} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-neutral-400 py-8 text-center border border-dashed border-neutral-200 rounded-lg">
+            No evidence has been attached to this argument yet.
+          </p>
+        )}
+      </section>
+    </div>
+  );
+}
