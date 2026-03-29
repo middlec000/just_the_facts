@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Argument } from "@/lib/types";
+import { VoteButtons } from "@/components/VoteButtons";
 
 interface ArgumentCardProps {
   argument: Argument;
@@ -20,9 +21,15 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
       <h3 className="text-base font-semibold text-neutral-900 mb-2">
         {argument.title}
       </h3>
-      <p className="text-sm text-neutral-600 leading-relaxed">
+      <p className="text-sm text-neutral-600 leading-relaxed mb-3">
         {argument.summary}
       </p>
+      <VoteButtons
+        id={argument.id}
+        initialUpvotes={argument.upvotes}
+        initialDownvotes={argument.downvotes}
+        stopPropagation
+      />
     </Link>
   );
 }

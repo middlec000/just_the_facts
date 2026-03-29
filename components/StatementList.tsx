@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Statement, Argument } from "@/lib/types";
+import { Statement } from "@/lib/types";
+import { VoteButtons } from "@/components/VoteButtons";
 
 interface StatementWithCounts extends Statement {
   forCount: number;
@@ -84,16 +85,24 @@ export function StatementList({ statements, allTags }: StatementListProps) {
                 </div>
               )}
 
-              <div className="flex gap-4 text-sm">
-                <span className="text-for">
-                  {statement.forCount} argument
-                  {statement.forCount !== 1 && "s"} for
-                </span>
-                <span className="text-neutral-300">|</span>
-                <span className="text-against">
-                  {statement.againstCount} argument
-                  {statement.againstCount !== 1 && "s"} against
-                </span>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex gap-4 text-sm">
+                  <span className="text-for">
+                    {statement.forCount} argument
+                    {statement.forCount !== 1 && "s"} for
+                  </span>
+                  <span className="text-neutral-300">|</span>
+                  <span className="text-against">
+                    {statement.againstCount} argument
+                    {statement.againstCount !== 1 && "s"} against
+                  </span>
+                </div>
+                <VoteButtons
+                  id={statement.id}
+                  initialUpvotes={statement.upvotes}
+                  initialDownvotes={statement.downvotes}
+                  stopPropagation
+                />
               </div>
             </Link>
           ))}
