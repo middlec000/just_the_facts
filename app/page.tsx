@@ -11,12 +11,14 @@ export default function HomePage() {
     const forArgs = args.filter((a) => a.stance === "for");
     const againstArgs = args.filter((a) => a.stance === "against");
     const allEvidence = args.flatMap((a) => getEvidenceByArgumentId(a.id));
+    const netScore = (e: { upvotes: number; downvotes: number }) =>
+      Math.max(0, e.upvotes - e.downvotes);
     const forEvidenceUpvotes = forArgs
       .flatMap((a) => getEvidenceByArgumentId(a.id))
-      .reduce((s, e) => s + e.upvotes, 0);
+      .reduce((s, e) => s + netScore(e), 0);
     const againstEvidenceUpvotes = againstArgs
       .flatMap((a) => getEvidenceByArgumentId(a.id))
-      .reduce((s, e) => s + e.upvotes, 0);
+      .reduce((s, e) => s + netScore(e), 0);
     const totalEvidenceUpvotes = forEvidenceUpvotes + againstEvidenceUpvotes;
     // Latest activity = newest createdAt across statement, arguments, evidence
     const allDates = [

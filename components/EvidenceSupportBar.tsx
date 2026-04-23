@@ -16,11 +16,11 @@ export function EvidenceSupportBar({ forUpvotes, againstUpvotes }: EvidenceSuppo
       </div>
       <div className="flex justify-between mt-1 text-xs text-neutral-400">
         <span className="text-emerald-600 font-medium">
-          {total === 0 ? "No evidence yet" : `↑${forUpvotes} for evidence`}
+          {total === 0 ? "No votes yet" : `for (${forUpvotes} net)`}
         </span>
         {total > 0 && (
           <span className="text-rose-500 font-medium">
-            against evidence ↑{againstUpvotes}
+            against ({againstUpvotes} net)
           </span>
         )}
       </div>

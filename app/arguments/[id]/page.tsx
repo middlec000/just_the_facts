@@ -68,7 +68,12 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
 
         <p className="text-neutral-700 leading-relaxed">{argument.summary}</p>
         <div className="flex items-center gap-3 mt-3">
-          <HeartButton id={argument.id} initialHearts={argument.hearts} />
+          <HeartButton
+            id={argument.id}
+            targetType="argument"
+            initialHearts={argument.hearts}
+            revalidatePath={`/arguments/${argument.id}`}
+          />
           <PostedBy
             userName={argumentUser?.name ?? "Unknown"}
             createdAt={argument.createdAt}
@@ -107,6 +112,7 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
                 key={ev.id}
                 evidence={ev}
                 userName={getUserById(ev.userId)?.name ?? "Unknown"}
+                revalidatePath={`/arguments/${argument.id}`}
               />
             ))}
           </div>

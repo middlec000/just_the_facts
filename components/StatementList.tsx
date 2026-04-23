@@ -174,7 +174,9 @@ export function StatementList({ statements, allTags }: StatementListProps) {
                 </div>
                 <HeartButton
                   id={statement.id}
+                  targetType="statement"
                   initialHearts={statement.hearts}
+                  revalidatePath="/"
                   stopPropagation
                 />
               </div>

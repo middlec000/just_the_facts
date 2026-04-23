@@ -282,3 +282,57 @@ export function addEvidence(ev: Evidence): void {
   `).run(ev);
 }
 
+// ---------------------------------------------------------------------------
+// Votes
+// ---------------------------------------------------------------------------
+
+type TargetType = "statement" | "argument" | "evidence";
+type VoteType = "heart" | "up" | "down";
+
+/**
+ * Toggle a vote: inserts if absent, deletes if already present.
+ * Returns whether the vote is now active (true) or removed (false).
+ */
+export function toggleVote(
+  userId: string,
+  targetType: TargetType,
+  targetId: string,
+  voteType: VoteType,
+): boolean {
+  const existing = db
+    .prepare(
+      `SELECT id FROM votes
+       WHERE user_id = ? AND target_type = ? AND target_id = ? AND vote_type = ?`,
+    )
+    .get(userId, targetType, targetId, voteType);
+
+  if (existing) {
+    db.prepare(
+      `DELETE FROM votes
+       WHERE user_id = ? AND target_type = ? AND target_id = ? AND vote_type = ?`,
+    ).run(userId, targetType, targetId, voteType);
+    return false;
+  } else {
+    db.prepare(
+      `INSERT INTO votes (target_type, target_id, vote_type, user_id, created_at)
+       VALUES (?, ?, ?, ?, datetime('now'))`,
+    ).run(targetType, targetId, voteType, userId);
+    return true;
+  }
+}
+
+/** Returns the set of vote types the user has cast on a target. */
+export function getUserVotesForTarget(
+  userId: string,
+  targetType: TargetType,
+  targetId: string,
+): VoteType[] {
+  const rows = db
+    .prepare(
+      `SELECT vote_type FROM votes
+       WHERE user_id = ? AND target_type = ? AND target_id = ?`,
+    )
+    .all(userId, targetType, targetId) as { vote_type: string }[];
+  return rows.map((r) => r.vote_type as VoteType);
+}
+

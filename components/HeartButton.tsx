@@ -1,47 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
-
-const STORAGE_KEY = "jtf_hearts";
-
-function loadHearts(): Record<string, boolean> {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
-  } catch {
-    return {};
-  }
-}
-
-function saveHeart(id: string, hearted: boolean) {
-  const hearts = loadHearts();
-  if (!hearted) {
-    delete hearts[id];
-  } else {
-    hearts[id] = true;
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(hearts));
-}
+import { useState, useTransition } from "react";
+import { castHeart } from "@/lib/actions";
 
 interface HeartButtonProps {
   id: string;
+  targetType: "statement" | "argument";
   initialHearts: number;
+  revalidatePath: string;
   /** Stop click events from bubbling (useful when HeartButton is inside a <Link>) */
   stopPropagation?: boolean;
 }
 
 export function HeartButton({
   id,
+  targetType,
   initialHearts,
+  revalidatePath,
   stopPropagation = false,
 }: HeartButtonProps) {
   const [hearted, setHearted] = useState(false);
+  const [, startTransition] = useTransition();
 
-  // Hydrate from localStorage after mount
-  useEffect(() => {
-    setHearted(!!loadHearts()[id]);
-  }, [id]);
-
+  // Optimistic delta: +1 if hearted, 0 if not
   const hearts = initialHearts + (hearted ? 1 : 0);
 
   function handleHeart(e: React.MouseEvent) {
@@ -49,7 +30,11 @@ export function HeartButton({
     e.stopPropagation();
     const next = !hearted;
     setHearted(next);
-    saveHeart(id, next);
+    startTransition(async () => {
+      const result = await castHeart(targetType, id, revalidatePath);
+      // Reconcile with server truth
+      setHearted(result.active);
+    });
   }
 
   return (

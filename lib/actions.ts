@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { addStatement, addArgument, addEvidence } from "./store";
+import { addStatement, addArgument, addEvidence, toggleVote } from "./store";
 import { getSession } from "./session";
 import type { Statement, Argument, Evidence } from "./types";
 
@@ -113,4 +113,30 @@ export async function createEvidence(formData: FormData) {
   revalidatePath(`/arguments/${argumentId}`);
   if (statementId) revalidatePath(`/statements/${statementId}`);
   return { id: ev.id };
+}
+
+// ---------------------------------------------------------------------------
+// Votes
+// ---------------------------------------------------------------------------
+
+export async function castHeart(
+  targetType: "statement" | "argument",
+  targetId: string,
+  revalidate: string,
+): Promise<{ active: boolean }> {
+  const userId = await requireUserId();
+  const active = toggleVote(userId, targetType, targetId, "heart");
+  revalidatePath(revalidate);
+  return { active };
+}
+
+export async function castVote(
+  targetId: string,
+  direction: "up" | "down",
+  revalidate: string,
+): Promise<{ active: boolean }> {
+  const userId = await requireUserId();
+  const active = toggleVote(userId, "evidence", targetId, direction);
+  revalidatePath(revalidate);
+  return { active };
 }

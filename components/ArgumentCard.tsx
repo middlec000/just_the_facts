@@ -31,7 +31,9 @@ export function ArgumentCard({ argument, userName, evidenceUpvotes, evidenceDown
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <HeartButton
           id={argument.id}
+          targetType="argument"
           initialHearts={argument.hearts}
+          revalidatePath={`/statements/${argument.statementId}`}
           stopPropagation
         />
         {(evidenceUpvotes > 0 || evidenceDownvotes > 0) && (

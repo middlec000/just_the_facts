@@ -5,6 +5,7 @@ import { PostedBy } from "@/components/PostedBy";
 interface EvidenceItemProps {
   evidence: Evidence;
   userName: string;
+  revalidatePath: string;
 }
 
 const sourceTypeLabels: Record<SourceType, string> = {
@@ -16,7 +17,7 @@ const sourceTypeLabels: Record<SourceType, string> = {
   other: "Other",
 };
 
-export function EvidenceItem({ evidence, userName }: EvidenceItemProps) {
+export function EvidenceItem({ evidence, userName, revalidatePath }: EvidenceItemProps) {
   return (
     <div className="border border-neutral-200 rounded-lg p-4">
       <div className="flex items-start justify-between gap-4 mb-2">
@@ -43,6 +44,7 @@ export function EvidenceItem({ evidence, userName }: EvidenceItemProps) {
           id={evidence.id}
           initialUpvotes={evidence.upvotes}
           initialDownvotes={evidence.downvotes}
+          revalidatePath={revalidatePath}
         />
         <PostedBy userName={userName} createdAt={evidence.createdAt} />
       </div>

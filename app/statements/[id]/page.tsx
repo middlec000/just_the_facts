@@ -32,12 +32,14 @@ export default async function StatementPage({ params }: StatementPageProps) {
     };
   }
 
+  const netScore = (e: { upvotes: number; downvotes: number }) =>
+    Math.max(0, e.upvotes - e.downvotes);
   const forEvidenceUpvotes = argumentsFor
     .flatMap((a) => getEvidenceByArgumentId(a.id))
-    .reduce((s, e) => s + e.upvotes, 0);
+    .reduce((s, e) => s + netScore(e), 0);
   const againstEvidenceUpvotes = argumentsAgainst
     .flatMap((a) => getEvidenceByArgumentId(a.id))
-    .reduce((s, e) => s + e.upvotes, 0);
+    .reduce((s, e) => s + netScore(e), 0);
 
   return (
     <div>

@@ -1,34 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useTransition } from "react";
+import { castVote } from "@/lib/actions";
 
 type VoteState = "up" | "down" | null;
-
-const STORAGE_KEY = "jtf_votes";
-
-function loadVotes(): Record<string, VoteState> {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
-  } catch {
-    return {};
-  }
-}
-
-function saveVote(id: string, vote: VoteState) {
-  const votes = loadVotes();
-  if (vote === null) {
-    delete votes[id];
-  } else {
-    votes[id] = vote;
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(votes));
-}
 
 interface VoteButtonsProps {
   id: string;
   initialUpvotes: number;
   initialDownvotes: number;
+  revalidatePath: string;
   /** Stop click events from bubbling (useful when VoteButtons is inside a <Link>) */
   stopPropagation?: boolean;
 }
@@ -37,19 +18,14 @@ export function VoteButtons({
   id,
   initialUpvotes,
   initialDownvotes,
+  revalidatePath,
   stopPropagation = false,
 }: VoteButtonsProps) {
   const [vote, setVote] = useState<VoteState>(null);
+  const [, startTransition] = useTransition();
 
-  // Hydrate from localStorage after mount
-  useEffect(() => {
-    setVote(loadVotes()[id] ?? null);
-  }, [id]);
-
-  const upvotes =
-    initialUpvotes + (vote === "up" ? 1 : 0);
-  const downvotes =
-    initialDownvotes + (vote === "down" ? 1 : 0);
+  const upvotes = initialUpvotes + (vote === "up" ? 1 : 0);
+  const downvotes = initialDownvotes + (vote === "down" ? 1 : 0);
 
   function handleVote(e: React.MouseEvent, direction: "up" | "down") {
     if (stopPropagation) e.preventDefault();
@@ -57,7 +33,10 @@ export function VoteButtons({
 
     const next: VoteState = vote === direction ? null : direction;
     setVote(next);
-    saveVote(id, next);
+    startTransition(async () => {
+      const result = await castVote(id, direction, revalidatePath);
+      setVote(result.active ? direction : null);
+    });
   }
 
   return (
