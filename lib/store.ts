@@ -46,6 +46,8 @@ interface EvidenceRow {
 interface UserRow {
   id: string;
   name: string;
+  username: string;
+  password_hash: string;
   created_at: string;
 }
 
@@ -200,7 +202,34 @@ export function getStatementForArgument(
 export function getUserById(id: string): User | undefined {
   const row = userByIdQuery.get(id);
   if (!row) return undefined;
-  return { id: row.id, name: row.name };
+  return { id: row.id, name: row.name, username: row.username };
+}
+
+export function getUserByUsername(
+  username: string,
+): (User & { passwordHash: string }) | undefined {
+  const row = db
+    .prepare<[string], UserRow>("SELECT * FROM users WHERE username = ?")
+    .get(username);
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    name: row.name,
+    username: row.username,
+    passwordHash: row.password_hash,
+  };
+}
+
+export function createUser(
+  id: string,
+  name: string,
+  username: string,
+  passwordHash: string,
+): void {
+  db.prepare(
+    `INSERT INTO users (id, name, username, password_hash, created_at)
+     VALUES (?, ?, ?, ?, datetime('now'))`,
+  ).run(id, name, username, passwordHash);
 }
 
 export function getAllTags(): string[] {

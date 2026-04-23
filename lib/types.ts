@@ -1,6 +1,7 @@
 export interface User {
   id: string;
   name: string;
+  username: string;
 }
 
 export interface Statement {

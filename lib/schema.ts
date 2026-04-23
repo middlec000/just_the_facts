@@ -15,9 +15,11 @@ export function applySchema(db: Database.Database): void {
     -- Dimension: users
     -- -----------------------------------------------------------------------
     CREATE TABLE IF NOT EXISTS users (
-      id         TEXT PRIMARY KEY,
-      name       TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      id            TEXT PRIMARY KEY,
+      name          TEXT NOT NULL,
+      username      TEXT NOT NULL DEFAULT '',
+      password_hash TEXT NOT NULL DEFAULT '',
+      created_at    TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     -- -----------------------------------------------------------------------
@@ -95,4 +97,17 @@ export function applySchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_statement_tags_stmt     ON statement_tags(statement_id);
     CREATE INDEX IF NOT EXISTS idx_votes_target            ON votes(target_type, target_id);
   `);
+
+  // -- Migrations: add auth columns to existing databases ----------------
+  // SQLite has no "ADD COLUMN IF NOT EXISTS"; we catch the error instead.
+  for (const sql of [
+    "ALTER TABLE users ADD COLUMN username TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE users ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''",
+  ]) {
+    try {
+      db.exec(sql);
+    } catch {
+      // column already exists — safe to ignore
+    }
+  }
 }

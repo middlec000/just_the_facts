@@ -1,8 +1,8 @@
 import { User, Statement, Argument, Evidence } from "./types";
 
 export const users: User[] = [
-  { id: "user-1", name: "Dr. Sarah Chen" },
-  { id: "user-2", name: "Alex Rivera" },
+  { id: "user-1", name: "Dr. Sarah Chen", username: "sarah" },
+  { id: "user-2", name: "Alex Rivera", username: "alex" },
 ];
 
 export const statements: Statement[] = [

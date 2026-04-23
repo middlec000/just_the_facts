@@ -5,12 +5,23 @@
  */
 
 import type Database from "better-sqlite3";
+import { scryptSync } from "crypto";
 import {
   users as seedUsers,
   statements as seedStatements,
   arguments_ as seedArguments,
   evidence as seedEvidence,
 } from "./mock-data";
+
+function hashPassword(password: string, salt: string): string {
+  return scryptSync(password, salt, 64).toString("hex");
+}
+
+/** password_hash string in the format `salt:hash` */
+function makePasswordHash(password: string): string {
+  const salt = "seed-salt-fixed";
+  return `${salt}:${hashPassword(password, salt)}`;
+}
 
 export function seedIfEmpty(db: Database.Database): void {
   const count = (
@@ -22,10 +33,10 @@ export function seedIfEmpty(db: Database.Database): void {
   const seed = db.transaction(() => {
     // --- users ---
     const insertUser = db.prepare(
-      "INSERT OR IGNORE INTO users (id, name, created_at) VALUES (?, ?, datetime('now'))",
+      "INSERT OR IGNORE INTO users (id, name, username, password_hash, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
     );
     for (const u of seedUsers) {
-      insertUser.run(u.id, u.name);
+      insertUser.run(u.id, u.name, u.username, makePasswordHash("password"));
     }
 
     // --- tags (upsert unique labels) ---

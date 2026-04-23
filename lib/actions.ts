@@ -1,17 +1,23 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { addStatement, addArgument, addEvidence } from "./store";
+import { getSession } from "./session";
 import type { Statement, Argument, Evidence } from "./types";
 
-/** Hardcoded until authentication is added. */
-const CURRENT_USER_ID = "user-1";
+async function requireUserId(): Promise<string> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  return session.userId;
+}
 
 // ---------------------------------------------------------------------------
 // Statements
 // ---------------------------------------------------------------------------
 
 export async function createStatement(formData: FormData) {
+  const userId = await requireUserId();
   const text = (formData.get("text") as string | null)?.trim() ?? "";
   const tagsRaw = (formData.get("tags") as string | null)?.trim() ?? "";
 
@@ -30,7 +36,7 @@ export async function createStatement(formData: FormData) {
     text,
     tags,
     hearts: 0,
-    userId: CURRENT_USER_ID,
+    userId,
     createdAt: new Date().toISOString(),
   };
 
@@ -44,6 +50,7 @@ export async function createStatement(formData: FormData) {
 // ---------------------------------------------------------------------------
 
 export async function createArgument(formData: FormData) {
+  const userId = await requireUserId();
   const statementId = (formData.get("statementId") as string | null) ?? "";
   const stance = (formData.get("stance") as "for" | "against") ?? "for";
   const title = (formData.get("title") as string | null)?.trim() ?? "";
@@ -60,7 +67,7 @@ export async function createArgument(formData: FormData) {
     title,
     summary,
     hearts: 0,
-    userId: CURRENT_USER_ID,
+    userId,
     createdAt: new Date().toISOString(),
   };
 
@@ -74,6 +81,7 @@ export async function createArgument(formData: FormData) {
 // ---------------------------------------------------------------------------
 
 export async function createEvidence(formData: FormData) {
+  const userId = await requireUserId();
   const argumentId = (formData.get("argumentId") as string | null) ?? "";
   const statementId = (formData.get("statementId") as string | null) ?? "";
   const title = (formData.get("title") as string | null)?.trim() ?? "";
@@ -97,7 +105,7 @@ export async function createEvidence(formData: FormData) {
     sourceType,
     upvotes: 0,
     downvotes: 0,
-    userId: CURRENT_USER_ID,
+    userId,
     createdAt: new Date().toISOString(),
   };
 
