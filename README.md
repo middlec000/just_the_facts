@@ -37,11 +37,12 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Deploy with Tunnel
 
-Quickest option: Use a tunnel tool (recommended)
-ngrok or Cloudflare Tunnel create a public URL that forwards to your local server — no router config needed.
+```bash
+# Start local server
+npm run dev
 
-- Start your local server (e.g., npx serve . or python -m http.server 8080)
-- Run ngrok http 8080 (or whatever port you're using)
-- Share the generated URL (e.g., https://abc123.ngrok.io) with your friend
+# Deploy in a tunnel
+cloudflared tunnel --url http://localhost:3000
 
-Cloudflare Tunnel (cloudflared tunnel --url http://localhost:8080) works similarly and is free with no time limits.
+# Share URL with friends
+```
