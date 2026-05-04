@@ -5,13 +5,14 @@ import { ArgumentCard } from "@/components/ArgumentCard";
 import { PostedBy } from "@/components/PostedBy";
 import { AddArgumentDialog } from "@/components/AddArgumentDialog";
 import { EvidenceSupportBar } from "@/components/EvidenceSupportBar";
+import { getSession } from "@/lib/session";
 
 interface StatementPageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function StatementPage({ params }: StatementPageProps) {
-  const { id } = await params;
+  const [{ id }, session] = await Promise.all([params, getSession()]);
   const statement = getStatementById(id);
 
   if (!statement) {
@@ -71,6 +72,7 @@ export default async function StatementPage({ params }: StatementPageProps) {
         <PostedBy
           userName={statementUser?.name ?? "Unknown"}
           createdAt={statement.createdAt}
+          updatedAt={statement.updatedAt}
         />
         <div className="mt-4">
           <EvidenceSupportBar
@@ -100,6 +102,7 @@ export default async function StatementPage({ params }: StatementPageProps) {
                   userName={getUserById(arg.userId)?.name ?? "Unknown"}
                   evidenceUpvotes={evidenceTotals(arg.id).upvotes}
                   evidenceDownvotes={evidenceTotals(arg.id).downvotes}
+                  currentUserId={session?.userId}
                 />
               ))
             ) : (
@@ -128,6 +131,7 @@ export default async function StatementPage({ params }: StatementPageProps) {
                   userName={getUserById(arg.userId)?.name ?? "Unknown"}
                   evidenceUpvotes={evidenceTotals(arg.id).upvotes}
                   evidenceDownvotes={evidenceTotals(arg.id).downvotes}
+                  currentUserId={session?.userId}
                 />
               ))
             ) : (

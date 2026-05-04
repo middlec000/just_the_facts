@@ -37,7 +37,8 @@ export function applySchema(db: Database.Database): void {
       id         TEXT PRIMARY KEY,
       text       TEXT NOT NULL,
       user_id    TEXT NOT NULL REFERENCES users(id),
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      updated_at TEXT
     );
 
     -- -----------------------------------------------------------------------
@@ -59,7 +60,8 @@ export function applySchema(db: Database.Database): void {
       title        TEXT NOT NULL,
       summary      TEXT NOT NULL,
       user_id      TEXT NOT NULL REFERENCES users(id),
-      created_at   TEXT NOT NULL
+      created_at   TEXT NOT NULL,
+      updated_at   TEXT
     );
 
     -- -----------------------------------------------------------------------
@@ -74,7 +76,8 @@ export function applySchema(db: Database.Database): void {
       source_type TEXT NOT NULL DEFAULT 'other'
                        CHECK(source_type IN ('article','study','official','video','book','other')),
       user_id     TEXT NOT NULL REFERENCES users(id),
-      created_at  TEXT NOT NULL
+      created_at  TEXT NOT NULL,
+      updated_at  TEXT
     );
 
     -- -----------------------------------------------------------------------
@@ -96,6 +99,38 @@ export function applySchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_evidence_argument_id    ON evidence(argument_id);
     CREATE INDEX IF NOT EXISTS idx_statement_tags_stmt     ON statement_tags(statement_id);
     CREATE INDEX IF NOT EXISTS idx_votes_target            ON votes(target_type, target_id);
+
+    -- -----------------------------------------------------------------------
+    -- Version history tables (store prior values before each edit)
+    -- -----------------------------------------------------------------------
+    CREATE TABLE IF NOT EXISTS statement_versions (
+      id           TEXT PRIMARY KEY,
+      statement_id TEXT NOT NULL REFERENCES statements(id) ON DELETE CASCADE,
+      text         TEXT NOT NULL,
+      tags         TEXT NOT NULL DEFAULT '',
+      created_at   TEXT NOT NULL,
+      edited_by    TEXT NOT NULL REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS argument_versions (
+      id          TEXT PRIMARY KEY,
+      argument_id TEXT NOT NULL REFERENCES arguments(id) ON DELETE CASCADE,
+      title       TEXT NOT NULL,
+      summary     TEXT NOT NULL,
+      created_at  TEXT NOT NULL,
+      edited_by   TEXT NOT NULL REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS evidence_versions (
+      id          TEXT PRIMARY KEY,
+      evidence_id TEXT NOT NULL REFERENCES evidence(id) ON DELETE CASCADE,
+      title       TEXT NOT NULL,
+      description TEXT NOT NULL,
+      source_url  TEXT NOT NULL DEFAULT '',
+      source_type TEXT NOT NULL DEFAULT 'other',
+      created_at  TEXT NOT NULL,
+      edited_by   TEXT NOT NULL REFERENCES users(id)
+    );
   `);
 
   // -- Migrations: add auth columns to existing databases ----------------
@@ -103,6 +138,9 @@ export function applySchema(db: Database.Database): void {
   for (const sql of [
     "ALTER TABLE users ADD COLUMN username TEXT NOT NULL DEFAULT ''",
     "ALTER TABLE users ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE statements ADD COLUMN updated_at TEXT",
+    "ALTER TABLE arguments ADD COLUMN updated_at TEXT",
+    "ALTER TABLE evidence ADD COLUMN updated_at TEXT",
   ]) {
     try {
       db.exec(sql);

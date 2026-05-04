@@ -1,9 +1,10 @@
 import { getStatements, getArgumentsByStatementId, getEvidenceByArgumentId, getAllTags, getUserById } from "@/lib/store";
 import { StatementList } from "@/components/StatementList";
 import { AddStatementDialog } from "@/components/AddStatementDialog";
+import { getSession } from "@/lib/session";
 
-export default function HomePage() {
-  const allTags = getAllTags();
+export default async function HomePage() {
+  const [session, allTags] = await Promise.all([getSession(), Promise.resolve(getAllTags())]);
 
   const statementsWithCounts = getStatements().map((statement) => {
     const args = getArgumentsByStatementId(statement.id);
@@ -51,7 +52,7 @@ export default function HomePage() {
         <AddStatementDialog />
       </section>
 
-      <StatementList statements={statementsWithCounts} allTags={allTags} />
+      <StatementList statements={statementsWithCounts} allTags={allTags} currentUserId={session?.userId} />
     </div>
   );
 }

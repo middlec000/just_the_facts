@@ -12,6 +12,7 @@ export interface Statement {
   hearts: number;
   userId: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export type Stance = "for" | "against";
@@ -25,6 +26,7 @@ export interface Argument {
   hearts: number;
   userId: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export type SourceType =
@@ -46,4 +48,5 @@ export interface Evidence {
   downvotes: number;
   userId: string;
   createdAt: string;
+  updatedAt?: string;
 }

@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { addStatement, addArgument, addEvidence, toggleVote } from "./store";
+import { addStatement, addArgument, addEvidence, toggleVote, updateStatement, updateArgument, updateEvidence } from "./store";
 import { getSession } from "./session";
 import type { Statement, Argument, Evidence } from "./types";
 
@@ -113,6 +113,61 @@ export async function createEvidence(formData: FormData) {
   revalidatePath(`/arguments/${argumentId}`);
   if (statementId) revalidatePath(`/statements/${statementId}`);
   return { id: ev.id };
+}
+
+// ---------------------------------------------------------------------------
+// Edit (update) actions
+// ---------------------------------------------------------------------------
+
+export async function editStatement(id: string, formData: FormData) {
+  const userId = await requireUserId();
+  const text = (formData.get("text") as string | null)?.trim() ?? "";
+  const tagsRaw = (formData.get("tags") as string | null)?.trim() ?? "";
+
+  if (!text) throw new Error("Statement text is required.");
+
+  const tags = tagsRaw
+    ? tagsRaw
+        .split(",")
+        .map((t) => t.trim().toLowerCase().replace(/^#/, ""))
+        .filter(Boolean)
+    : [];
+
+  updateStatement(id, userId, { text, tags });
+  revalidatePath("/");
+  revalidatePath(`/statements/${id}`);
+}
+
+export async function editArgument(id: string, formData: FormData) {
+  const userId = await requireUserId();
+  const title = (formData.get("title") as string | null)?.trim() ?? "";
+  const summary = (formData.get("summary") as string | null)?.trim() ?? "";
+  const statementId = (formData.get("statementId") as string | null) ?? "";
+
+  if (!title) throw new Error("Title is required.");
+  if (!summary) throw new Error("Summary is required.");
+
+  updateArgument(id, userId, { title, summary });
+  revalidatePath(`/arguments/${id}`);
+  if (statementId) revalidatePath(`/statements/${statementId}`);
+}
+
+export async function editEvidence(id: string, formData: FormData) {
+  const userId = await requireUserId();
+  const argumentId = (formData.get("argumentId") as string | null) ?? "";
+  const title = (formData.get("title") as string | null)?.trim() ?? "";
+  const description =
+    (formData.get("description") as string | null)?.trim() ?? "";
+  const sourceUrl =
+    (formData.get("sourceUrl") as string | null)?.trim() ?? "";
+  const sourceType =
+    (formData.get("sourceType") as Evidence["sourceType"] | null) ?? "other";
+
+  if (!title) throw new Error("Title is required.");
+  if (!description) throw new Error("Description is required.");
+
+  updateEvidence(id, userId, { title, description, sourceUrl, sourceType });
+  revalidatePath(`/arguments/${argumentId}`);
 }
 
 // ---------------------------------------------------------------------------

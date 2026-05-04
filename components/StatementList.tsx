@@ -6,6 +6,7 @@ import { Statement } from "@/lib/types";
 import { HeartButton } from "@/components/HeartButton";
 import { PostedBy } from "@/components/PostedBy";
 import { EvidenceSupportBar } from "@/components/EvidenceSupportBar";
+import { EditStatementDialog } from "@/components/EditStatementDialog";
 
 type SortField = "date" | "alpha" | "activity" | "hearts" | "evidence";
 type SortDir = "asc" | "desc";
@@ -31,9 +32,10 @@ interface StatementWithCounts extends Statement {
 interface StatementListProps {
   statements: StatementWithCounts[];
   allTags: string[];
+  currentUserId?: string;
 }
 
-export function StatementList({ statements, allTags }: StatementListProps) {
+export function StatementList({ statements, allTags, currentUserId }: StatementListProps) {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -129,59 +131,69 @@ export function StatementList({ statements, allTags }: StatementListProps) {
       ) : (
         <div className="space-y-4">
           {sorted.map((statement) => (
-            <Link
-              key={statement.id}
-              href={`/statements/${statement.id}`}
-              className="block p-6 rounded-lg border border-neutral-200 bg-white hover:shadow-md transition-shadow"
-            >
-              <h2 className="text-lg font-semibold text-neutral-900 mb-3">
-                &ldquo;{statement.text}&rdquo;
-              </h2>
+            <div key={statement.id} className="relative">
+              <Link
+                href={`/statements/${statement.id}`}
+                className="block p-6 rounded-lg border border-neutral-200 bg-white hover:shadow-md transition-shadow"
+              >
+                <h2 className={`text-lg font-semibold text-neutral-900 mb-3 ${currentUserId === statement.userId ? "pr-16" : ""}`}>
+                  &ldquo;{statement.text}&rdquo;
+                </h2>
 
-              {/* Hashtags */}
-              {statement.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {statement.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 border border-neutral-200"
-                    >
-                      #{tag}
+                {/* Hashtags */}
+                {statement.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {statement.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 border border-neutral-200"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Evidence support bar */}
+                <div className="mb-3">
+                  <EvidenceSupportBar
+                    forUpvotes={statement.forEvidenceUpvotes}
+                    againstUpvotes={statement.againstEvidenceUpvotes}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex gap-4 text-sm">
+                    <span className="text-for">
+                      {statement.forCount} argument
+                      {statement.forCount !== 1 && "s"} for
                     </span>
-                  ))}
+                    <span className="text-neutral-300">|</span>
+                    <span className="text-against">
+                      {statement.againstCount} argument
+                      {statement.againstCount !== 1 && "s"} against
+                    </span>
+                  </div>
+                  <HeartButton
+                    id={statement.id}
+                    targetType="statement"
+                    initialHearts={statement.hearts}
+                    revalidatePath="/"
+                    stopPropagation
+                  />
+                </div>
+                <PostedBy
+                  userName={statement.userName}
+                  createdAt={statement.createdAt}
+                  updatedAt={statement.updatedAt}
+                />
+              </Link>
+              {currentUserId === statement.userId && (
+                <div className="absolute top-4 right-4">
+                  <EditStatementDialog statement={statement} />
                 </div>
               )}
-
-              {/* Evidence support bar */}
-              <div className="mb-3">
-                <EvidenceSupportBar
-                  forUpvotes={statement.forEvidenceUpvotes}
-                  againstUpvotes={statement.againstEvidenceUpvotes}
-                />
-              </div>
-
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex gap-4 text-sm">
-                  <span className="text-for">
-                    {statement.forCount} argument
-                    {statement.forCount !== 1 && "s"} for
-                  </span>
-                  <span className="text-neutral-300">|</span>
-                  <span className="text-against">
-                    {statement.againstCount} argument
-                    {statement.againstCount !== 1 && "s"} against
-                  </span>
-                </div>
-                <HeartButton
-                  id={statement.id}
-                  targetType="statement"
-                  initialHearts={statement.hearts}
-                  revalidatePath="/"
-                  stopPropagation
-                />
-              </div>
-              <PostedBy userName={statement.userName} createdAt={statement.createdAt} />
-            </Link>
+            </div>
           ))}
         </div>
       )}

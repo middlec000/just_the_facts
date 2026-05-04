@@ -16,6 +16,7 @@ interface StatementRow {
   text: string;
   user_id: string;
   created_at: string;
+  updated_at: string | null;
   hearts: number;
 }
 
@@ -27,6 +28,7 @@ interface ArgumentRow {
   summary: string;
   user_id: string;
   created_at: string;
+  updated_at: string | null;
   hearts: number;
 }
 
@@ -39,6 +41,7 @@ interface EvidenceRow {
   source_type: string;
   user_id: string;
   created_at: string;
+  updated_at: string | null;
   upvotes: number;
   downvotes: number;
 }
@@ -59,6 +62,7 @@ function rowToStatement(row: StatementRow, tags: string[]): Statement {
     hearts: row.hearts,
     userId: row.user_id,
     createdAt: row.created_at,
+    ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
   };
 }
 
@@ -72,6 +76,7 @@ function rowToArgument(row: ArgumentRow): Argument {
     hearts: row.hearts,
     userId: row.user_id,
     createdAt: row.created_at,
+    ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
   };
 }
 
@@ -87,6 +92,7 @@ function rowToEvidence(row: EvidenceRow): Evidence {
     downvotes: row.downvotes,
     userId: row.user_id,
     createdAt: row.created_at,
+    ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
   };
 }
 
@@ -334,5 +340,149 @@ export function getUserVotesForTarget(
     )
     .all(userId, targetType, targetId) as { vote_type: string }[];
   return rows.map((r) => r.vote_type as VoteType);
+}
+
+// ---------------------------------------------------------------------------
+// Editors (archive previous version, then update main row)
+// ---------------------------------------------------------------------------
+
+interface StatementUpdateRow {
+  user_id: string;
+  text: string;
+}
+
+export function updateStatement(
+  id: string,
+  userId: string,
+  data: { text: string; tags: string[] },
+): void {
+  const run = db.transaction(() => {
+    const row = db
+      .prepare<[string], StatementUpdateRow>(
+        "SELECT user_id, text FROM statements WHERE id = ?",
+      )
+      .get(id);
+    if (!row) throw new Error("Statement not found.");
+    if (row.user_id !== userId) throw new Error("Not authorized.");
+
+    const currentTags = getTagsForStatement(id);
+    db.prepare(
+      `INSERT INTO statement_versions (id, statement_id, text, tags, created_at, edited_by)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run(
+      crypto.randomUUID(),
+      id,
+      row.text,
+      currentTags.join(","),
+      new Date().toISOString(),
+      userId,
+    );
+
+    db.prepare(
+      "UPDATE statements SET text = ?, updated_at = ? WHERE id = ?",
+    ).run(data.text, new Date().toISOString(), id);
+
+    db.prepare("DELETE FROM statement_tags WHERE statement_id = ?").run(id);
+    for (const tag of data.tags) {
+      upsertTag.run(tag);
+      const tagRow = tagIdFor.get(tag)!;
+      insertStmtTag.run(id, tagRow.id);
+    }
+  });
+  run();
+}
+
+interface ArgumentUpdateRow {
+  user_id: string;
+  title: string;
+  summary: string;
+}
+
+export function updateArgument(
+  id: string,
+  userId: string,
+  data: { title: string; summary: string },
+): void {
+  const run = db.transaction(() => {
+    const row = db
+      .prepare<[string], ArgumentUpdateRow>(
+        "SELECT user_id, title, summary FROM arguments WHERE id = ?",
+      )
+      .get(id);
+    if (!row) throw new Error("Argument not found.");
+    if (row.user_id !== userId) throw new Error("Not authorized.");
+
+    db.prepare(
+      `INSERT INTO argument_versions (id, argument_id, title, summary, created_at, edited_by)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run(
+      crypto.randomUUID(),
+      id,
+      row.title,
+      row.summary,
+      new Date().toISOString(),
+      userId,
+    );
+
+    db.prepare(
+      "UPDATE arguments SET title = ?, summary = ?, updated_at = ? WHERE id = ?",
+    ).run(data.title, data.summary, new Date().toISOString(), id);
+  });
+  run();
+}
+
+interface EvidenceUpdateRow {
+  user_id: string;
+  title: string;
+  description: string;
+  source_url: string;
+  source_type: string;
+}
+
+export function updateEvidence(
+  id: string,
+  userId: string,
+  data: {
+    title: string;
+    description: string;
+    sourceUrl: string;
+    sourceType: Evidence["sourceType"];
+  },
+): void {
+  const run = db.transaction(() => {
+    const row = db
+      .prepare<[string], EvidenceUpdateRow>(
+        "SELECT user_id, title, description, source_url, source_type FROM evidence WHERE id = ?",
+      )
+      .get(id);
+    if (!row) throw new Error("Evidence not found.");
+    if (row.user_id !== userId) throw new Error("Not authorized.");
+
+    db.prepare(
+      `INSERT INTO evidence_versions (id, evidence_id, title, description, source_url, source_type, created_at, edited_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      crypto.randomUUID(),
+      id,
+      row.title,
+      row.description,
+      row.source_url,
+      row.source_type,
+      new Date().toISOString(),
+      userId,
+    );
+
+    db.prepare(
+      "UPDATE evidence SET title = ?, description = ?, source_url = ?, source_type = ?, updated_at = ? WHERE id = ?",
+    ).run(
+      data.title,
+      data.description,
+      data.sourceUrl,
+      data.sourceType,
+      new Date().toISOString(),
+      id,
+    );
+  });
+  run();
 }
 

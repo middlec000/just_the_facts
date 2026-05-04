@@ -1,11 +1,13 @@
 import { Evidence, SourceType } from "@/lib/types";
 import { VoteButtons } from "@/components/VoteButtons";
 import { PostedBy } from "@/components/PostedBy";
+import { EditEvidenceDialog } from "@/components/EditEvidenceDialog";
 
 interface EvidenceItemProps {
   evidence: Evidence;
   userName: string;
   revalidatePath: string;
+  currentUserId?: string;
 }
 
 const sourceTypeLabels: Record<SourceType, string> = {
@@ -17,14 +19,19 @@ const sourceTypeLabels: Record<SourceType, string> = {
   other: "Other",
 };
 
-export function EvidenceItem({ evidence, userName, revalidatePath }: EvidenceItemProps) {
+export function EvidenceItem({ evidence, userName, revalidatePath, currentUserId }: EvidenceItemProps) {
   return (
     <div className="border border-neutral-200 rounded-lg p-4">
       <div className="flex items-start justify-between gap-4 mb-2">
         <h4 className="font-medium text-neutral-900">{evidence.title}</h4>
-        <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-neutral-100 text-neutral-600 border border-neutral-200">
-          {sourceTypeLabels[evidence.sourceType]}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs px-2 py-1 rounded-full bg-neutral-100 text-neutral-600 border border-neutral-200">
+            {sourceTypeLabels[evidence.sourceType]}
+          </span>
+          {currentUserId === evidence.userId && (
+            <EditEvidenceDialog evidence={evidence} />
+          )}
+        </div>
       </div>
       <p className="text-sm text-neutral-600 mb-3 leading-relaxed">
         {evidence.description}
@@ -46,7 +53,7 @@ export function EvidenceItem({ evidence, userName, revalidatePath }: EvidenceIte
           initialDownvotes={evidence.downvotes}
           revalidatePath={revalidatePath}
         />
-        <PostedBy userName={userName} createdAt={evidence.createdAt} />
+        <PostedBy userName={userName} createdAt={evidence.createdAt} updatedAt={evidence.updatedAt} />
       </div>
     </div>
   );

@@ -10,13 +10,15 @@ import { EvidenceItem } from "@/components/EvidenceItem";
 import { PostedBy } from "@/components/PostedBy";
 import { HeartButton } from "@/components/HeartButton";
 import { AddEvidenceDialog } from "@/components/AddEvidenceDialog";
+import { EditArgumentDialog } from "@/components/EditArgumentDialog";
+import { getSession } from "@/lib/session";
 
 interface ArgumentPageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function ArgumentPage({ params }: ArgumentPageProps) {
-  const { id } = await params;
+  const [{ id }, session] = await Promise.all([params, getSession()]);
   const argument = getArgumentById(id);
 
   if (!argument) {
@@ -77,7 +79,11 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
           <PostedBy
             userName={argumentUser?.name ?? "Unknown"}
             createdAt={argument.createdAt}
+            updatedAt={argument.updatedAt}
           />
+          {session?.userId === argument.userId && (
+            <EditArgumentDialog argument={argument} />
+          )}
         </div>
 
         {/* Parent statement reference */}
@@ -113,6 +119,7 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
                 evidence={ev}
                 userName={getUserById(ev.userId)?.name ?? "Unknown"}
                 revalidatePath={`/arguments/${argument.id}`}
+                currentUserId={session?.userId}
               />
             ))}
           </div>
