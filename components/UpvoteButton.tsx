@@ -20,10 +20,14 @@ export function UpvoteButton({
   stopPropagation = false,
 }: UpvoteButtonProps) {
   const [upvoted, setUpvoted] = useState(false);
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
 
-  // Optimistic delta: +1 if upvoted, 0 if not
-  const upvotes = initialUpvotes + (upvoted ? 1 : 0);
+  // Apply the optimistic delta only while the server call is in flight.
+  // Once the transition completes, initialUpvotes is already refreshed by
+  // revalidatePath, so we use it directly to avoid double-counting.
+  const upvotes = isPending
+    ? initialUpvotes + (upvoted ? 1 : -1)
+    : initialUpvotes;
 
   function handleUpvote(e: React.MouseEvent) {
     if (stopPropagation) e.preventDefault();
