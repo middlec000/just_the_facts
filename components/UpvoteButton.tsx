@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { castUpvote } from "@/lib/actions";
 
 interface UpvoteButtonProps {
@@ -20,14 +20,15 @@ export function UpvoteButton({
   stopPropagation = false,
 }: UpvoteButtonProps) {
   const [upvoted, setUpvoted] = useState(false);
-  const [isPending, startTransition] = useTransition();
-
-  // Apply the optimistic delta only while the server call is in flight.
-  // Once the transition completes, initialUpvotes is already refreshed by
-  // revalidatePath, so we use it directly to avoid double-counting.
-  const upvotes = isPending
-    ? initialUpvotes + (upvoted ? 1 : -1)
-    : initialUpvotes;
+  const [, startTransition] = useTransition();
+  // useOptimistic applies the delta immediately and reverts to the real
+  // initialUpvotes (refreshed by revalidatePath) once the transition settles,
+  // preventing the double-count that occurred when initialUpvotes was updated
+  // by the server refresh while isPending was still true.
+  const [optimisticUpvotes, setOptimisticUpvotes] = useOptimistic(
+    initialUpvotes,
+    (current, delta: number) => current + delta,
+  );
 
   function handleUpvote(e: React.MouseEvent) {
     if (stopPropagation) e.preventDefault();
@@ -35,6 +36,7 @@ export function UpvoteButton({
     const next = !upvoted;
     setUpvoted(next);
     startTransition(async () => {
+      setOptimisticUpvotes(next ? 1 : -1);
       const result = await castUpvote(targetType, id, revalidatePath);
       // Reconcile with server truth
       setUpvoted(result.active);
@@ -64,7 +66,7 @@ export function UpvoteButton({
           clipRule="evenodd"
         />
       </svg>
-      <span className="font-medium">{upvotes}</span>
+      <span className="font-medium">{optimisticUpvotes}</span>
     </button>
   );
 }
