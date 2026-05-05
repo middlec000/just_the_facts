@@ -1,12 +1,10 @@
 import { Evidence, SourceType } from "@/lib/types";
-import { VoteButtons } from "@/components/VoteButtons";
 import { PostedBy } from "@/components/PostedBy";
 import { EditEvidenceDialog } from "@/components/EditEvidenceDialog";
 
 interface EvidenceItemProps {
   evidence: Evidence;
   userName: string;
-  revalidatePath: string;
   currentUserId?: string;
 }
 
@@ -19,7 +17,7 @@ const sourceTypeLabels: Record<SourceType, string> = {
   other: "Other",
 };
 
-export function EvidenceItem({ evidence, userName, revalidatePath, currentUserId }: EvidenceItemProps) {
+export function EvidenceItem({ evidence, userName, currentUserId }: EvidenceItemProps) {
   return (
     <div className="border border-neutral-200 rounded-lg p-4">
       <div className="flex items-start justify-between gap-4 mb-2">
@@ -47,12 +45,6 @@ export function EvidenceItem({ evidence, userName, revalidatePath, currentUserId
         </a>
       )}
       <div className="flex items-center justify-between gap-4 mt-3 flex-wrap">
-        <VoteButtons
-          id={evidence.id}
-          initialUpvotes={evidence.upvotes}
-          initialDownvotes={evidence.downvotes}
-          revalidatePath={revalidatePath}
-        />
         <PostedBy userName={userName} createdAt={evidence.createdAt} updatedAt={evidence.updatedAt} />
       </div>
     </div>

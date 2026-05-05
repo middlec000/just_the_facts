@@ -12,15 +12,9 @@ export default async function HomePage() {
     const forArgs = args.filter((a) => a.stance === "for");
     const againstArgs = args.filter((a) => a.stance === "against");
     const allEvidence = args.flatMap((a) => getEvidenceByArgumentId(a.id));
-    const netScore = (e: { upvotes: number; downvotes: number }) =>
-      Math.max(0, e.upvotes - e.downvotes);
-    const forEvidenceUpvotes = forArgs
-      .flatMap((a) => getEvidenceByArgumentId(a.id))
-      .reduce((s, e) => s + netScore(e), 0);
-    const againstEvidenceUpvotes = againstArgs
-      .flatMap((a) => getEvidenceByArgumentId(a.id))
-      .reduce((s, e) => s + netScore(e), 0);
-    const totalEvidenceUpvotes = forEvidenceUpvotes + againstEvidenceUpvotes;
+    const forArgumentUpvotes = forArgs.reduce((s, a) => s + a.upvotes, 0);
+    const againstArgumentUpvotes = againstArgs.reduce((s, a) => s + a.upvotes, 0);
+    const totalArgumentUpvotes = forArgumentUpvotes + againstArgumentUpvotes;
     // Latest activity = newest createdAt across statement, arguments, evidence
     const allDates = [
       statement.createdAt,
@@ -32,9 +26,9 @@ export default async function HomePage() {
       ...statement,
       forCount: forArgs.length,
       againstCount: againstArgs.length,
-      forEvidenceUpvotes,
-      againstEvidenceUpvotes,
-      totalEvidenceUpvotes,
+      forArgumentUpvotes,
+      againstArgumentUpvotes,
+      totalArgumentUpvotes,
       latestActivityAt,
       userName: user?.name ?? "Unknown",
     };

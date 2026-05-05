@@ -9,7 +9,7 @@ export interface Statement {
   text: string;
   /** Hashtag topics (stored without the # prefix, e.g. "science") */
   tags: string[];
-  hearts: number;
+  upvotes: number;
   userId: string;
   createdAt: string;
   updatedAt?: string;
@@ -23,7 +23,7 @@ export interface Argument {
   stance: Stance;
   title: string;
   summary: string;
-  hearts: number;
+  upvotes: number;
   userId: string;
   createdAt: string;
   updatedAt?: string;
@@ -44,8 +44,6 @@ export interface Evidence {
   description: string;
   sourceUrl: string;
   sourceType: SourceType;
-  upvotes: number;
-  downvotes: number;
   userId: string;
   createdAt: string;
   updatedAt?: string;

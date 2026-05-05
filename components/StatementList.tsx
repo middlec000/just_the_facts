@@ -3,28 +3,28 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Statement } from "@/lib/types";
-import { HeartButton } from "@/components/HeartButton";
+import { UpvoteButton } from "@/components/UpvoteButton";
 import { PostedBy } from "@/components/PostedBy";
 import { EvidenceSupportBar } from "@/components/EvidenceSupportBar";
 import { EditStatementDialog } from "@/components/EditStatementDialog";
 
-type SortField = "date" | "alpha" | "activity" | "hearts" | "evidence";
+type SortField = "date" | "alpha" | "activity" | "upvotes" | "arguments";
 type SortDir = "asc" | "desc";
 
 const SORT_OPTIONS: { field: SortField; label: string; defaultDir: SortDir }[] = [
-  { field: "date",     label: "Date posted",     defaultDir: "desc" },
-  { field: "alpha",    label: "Alphabetical",     defaultDir: "asc"  },
-  { field: "activity", label: "Latest activity",  defaultDir: "desc" },
-  { field: "hearts",   label: "Hearts",           defaultDir: "desc" },
-  { field: "evidence", label: "Evidence upvotes",  defaultDir: "desc" },
+  { field: "date",      label: "Date posted",      defaultDir: "desc" },
+  { field: "alpha",     label: "Alphabetical",      defaultDir: "asc"  },
+  { field: "activity",  label: "Latest activity",   defaultDir: "desc" },
+  { field: "upvotes",   label: "Upvotes",            defaultDir: "desc" },
+  { field: "arguments", label: "Argument upvotes",   defaultDir: "desc" },
 ];
 
 interface StatementWithCounts extends Statement {
   forCount: number;
   againstCount: number;
-  forEvidenceUpvotes: number;
-  againstEvidenceUpvotes: number;
-  totalEvidenceUpvotes: number;
+  forArgumentUpvotes: number;
+  againstArgumentUpvotes: number;
+  totalArgumentUpvotes: number;
   latestActivityAt: string;
   userName: string;
 }
@@ -60,8 +60,8 @@ export function StatementList({ statements, allTags, currentUserId }: StatementL
       case "date":     cmp = a.createdAt.localeCompare(b.createdAt); break;
       case "alpha":    cmp = a.text.localeCompare(b.text); break;
       case "activity": cmp = a.latestActivityAt.localeCompare(b.latestActivityAt); break;
-      case "hearts":   cmp = a.hearts - b.hearts; break;
-      case "evidence": cmp = a.totalEvidenceUpvotes - b.totalEvidenceUpvotes; break;
+      case "upvotes":  cmp = a.upvotes - b.upvotes; break;
+      case "arguments": cmp = a.totalArgumentUpvotes - b.totalArgumentUpvotes; break;
     }
     return sortDir === "asc" ? cmp : -cmp;
   });
@@ -157,8 +157,8 @@ export function StatementList({ statements, allTags, currentUserId }: StatementL
                 {/* Evidence support bar */}
                 <div className="mb-3">
                   <EvidenceSupportBar
-                    forUpvotes={statement.forEvidenceUpvotes}
-                    againstUpvotes={statement.againstEvidenceUpvotes}
+                    forArgumentUpvotes={statement.forArgumentUpvotes}
+                    againstArgumentUpvotes={statement.againstArgumentUpvotes}
                   />
                 </div>
 
@@ -174,10 +174,10 @@ export function StatementList({ statements, allTags, currentUserId }: StatementL
                       {statement.againstCount !== 1 && "s"} against
                     </span>
                   </div>
-                  <HeartButton
+                  <UpvoteButton
                     id={statement.id}
                     targetType="statement"
-                    initialHearts={statement.hearts}
+                    initialUpvotes={statement.upvotes}
                     revalidatePath="/"
                     stopPropagation
                   />

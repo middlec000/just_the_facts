@@ -1,11 +1,11 @@
 interface EvidenceSupportBarProps {
-  forUpvotes: number;
-  againstUpvotes: number;
+  forArgumentUpvotes: number;
+  againstArgumentUpvotes: number;
 }
 
-export function EvidenceSupportBar({ forUpvotes, againstUpvotes }: EvidenceSupportBarProps) {
-  const total = forUpvotes + againstUpvotes;
-  const forPct = total === 0 ? 50 : Math.round((forUpvotes / total) * 100);
+export function EvidenceSupportBar({ forArgumentUpvotes, againstArgumentUpvotes }: EvidenceSupportBarProps) {
+  const total = forArgumentUpvotes + againstArgumentUpvotes;
+  const forPct = total === 0 ? 50 : Math.round((forArgumentUpvotes / total) * 100);
   const againstPct = 100 - forPct;
 
   return (
@@ -16,11 +16,11 @@ export function EvidenceSupportBar({ forUpvotes, againstUpvotes }: EvidenceSuppo
       </div>
       <div className="flex justify-between mt-1 text-xs text-neutral-400">
         <span className="text-emerald-600 font-medium">
-          {total === 0 ? "No votes yet" : `for (${forUpvotes} net)`}
+          {total === 0 ? "No upvotes yet" : `for (${forArgumentUpvotes} upvotes)`}
         </span>
         {total > 0 && (
           <span className="text-rose-500 font-medium">
-            against ({againstUpvotes} net)
+            against ({againstArgumentUpvotes} upvotes)
           </span>
         )}
       </div>

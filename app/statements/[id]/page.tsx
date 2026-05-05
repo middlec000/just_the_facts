@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getStatementById, getArgumentsByStatementId, getEvidenceByArgumentId, getUserById } from "@/lib/store";
+import { getStatementById, getArgumentsByStatementId, getUserById } from "@/lib/store";
 import { ArgumentCard } from "@/components/ArgumentCard";
 import { PostedBy } from "@/components/PostedBy";
 import { AddArgumentDialog } from "@/components/AddArgumentDialog";
@@ -24,23 +24,8 @@ export default async function StatementPage({ params }: StatementPageProps) {
   const argumentsAgainst = allArguments.filter((a) => a.stance === "against");
   const statementUser = getUserById(statement.userId);
 
-  /** Sums evidence up/downvotes for a given argument id. */
-  function evidenceTotals(argId: string) {
-    const ev = getEvidenceByArgumentId(argId);
-    return {
-      upvotes: ev.reduce((s, e) => s + e.upvotes, 0),
-      downvotes: ev.reduce((s, e) => s + e.downvotes, 0),
-    };
-  }
-
-  const netScore = (e: { upvotes: number; downvotes: number }) =>
-    Math.max(0, e.upvotes - e.downvotes);
-  const forEvidenceUpvotes = argumentsFor
-    .flatMap((a) => getEvidenceByArgumentId(a.id))
-    .reduce((s, e) => s + netScore(e), 0);
-  const againstEvidenceUpvotes = argumentsAgainst
-    .flatMap((a) => getEvidenceByArgumentId(a.id))
-    .reduce((s, e) => s + netScore(e), 0);
+  const forArgumentUpvotes = argumentsFor.reduce((s, a) => s + a.upvotes, 0);
+  const againstArgumentUpvotes = argumentsAgainst.reduce((s, a) => s + a.upvotes, 0);
 
   return (
     <div>
@@ -76,8 +61,8 @@ export default async function StatementPage({ params }: StatementPageProps) {
         />
         <div className="mt-4">
           <EvidenceSupportBar
-            forUpvotes={forEvidenceUpvotes}
-            againstUpvotes={againstEvidenceUpvotes}
+            forArgumentUpvotes={forArgumentUpvotes}
+            againstArgumentUpvotes={againstArgumentUpvotes}
           />
         </div>
       </section>
@@ -100,8 +85,6 @@ export default async function StatementPage({ params }: StatementPageProps) {
                   key={arg.id}
                   argument={arg}
                   userName={getUserById(arg.userId)?.name ?? "Unknown"}
-                  evidenceUpvotes={evidenceTotals(arg.id).upvotes}
-                  evidenceDownvotes={evidenceTotals(arg.id).downvotes}
                   currentUserId={session?.userId}
                 />
               ))
@@ -129,8 +112,6 @@ export default async function StatementPage({ params }: StatementPageProps) {
                   key={arg.id}
                   argument={arg}
                   userName={getUserById(arg.userId)?.name ?? "Unknown"}
-                  evidenceUpvotes={evidenceTotals(arg.id).upvotes}
-                  evidenceDownvotes={evidenceTotals(arg.id).downvotes}
                   currentUserId={session?.userId}
                 />
               ))

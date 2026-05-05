@@ -8,7 +8,7 @@ import {
 } from "@/lib/store";
 import { EvidenceItem } from "@/components/EvidenceItem";
 import { PostedBy } from "@/components/PostedBy";
-import { HeartButton } from "@/components/HeartButton";
+import { UpvoteButton } from "@/components/UpvoteButton";
 import { AddEvidenceDialog } from "@/components/AddEvidenceDialog";
 import { EditArgumentDialog } from "@/components/EditArgumentDialog";
 import { getSession } from "@/lib/session";
@@ -70,10 +70,10 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
 
         <p className="text-neutral-700 leading-relaxed">{argument.summary}</p>
         <div className="flex items-center gap-3 mt-3">
-          <HeartButton
+          <UpvoteButton
             id={argument.id}
             targetType="argument"
-            initialHearts={argument.hearts}
+            initialUpvotes={argument.upvotes}
             revalidatePath={`/arguments/${argument.id}`}
           />
           <PostedBy
@@ -118,7 +118,6 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
                 key={ev.id}
                 evidence={ev}
                 userName={getUserById(ev.userId)?.name ?? "Unknown"}
-                revalidatePath={`/arguments/${argument.id}`}
                 currentUserId={session?.userId}
               />
             ))}

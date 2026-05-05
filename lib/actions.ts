@@ -35,7 +35,7 @@ export async function createStatement(formData: FormData) {
     id: crypto.randomUUID(),
     text,
     tags,
-    hearts: 0,
+    upvotes: 0,
     userId,
     createdAt: new Date().toISOString(),
   };
@@ -66,7 +66,7 @@ export async function createArgument(formData: FormData) {
     stance,
     title,
     summary,
-    hearts: 0,
+    upvotes: 0,
     userId,
     createdAt: new Date().toISOString(),
   };
@@ -103,8 +103,6 @@ export async function createEvidence(formData: FormData) {
     description,
     sourceUrl,
     sourceType,
-    upvotes: 0,
-    downvotes: 0,
     userId,
     createdAt: new Date().toISOString(),
   };
@@ -174,24 +172,13 @@ export async function editEvidence(id: string, formData: FormData) {
 // Votes
 // ---------------------------------------------------------------------------
 
-export async function castHeart(
+export async function castUpvote(
   targetType: "statement" | "argument",
   targetId: string,
   revalidate: string,
 ): Promise<{ active: boolean }> {
   const userId = await requireUserId();
   const active = toggleVote(userId, targetType, targetId, "heart");
-  revalidatePath(revalidate);
-  return { active };
-}
-
-export async function castVote(
-  targetId: string,
-  direction: "up" | "down",
-  revalidate: string,
-): Promise<{ active: boolean }> {
-  const userId = await requireUserId();
-  const active = toggleVote(userId, "evidence", targetId, direction);
   revalidatePath(revalidate);
   return { active };
 }

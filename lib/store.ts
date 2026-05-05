@@ -17,7 +17,7 @@ interface StatementRow {
   user_id: string;
   created_at: string;
   updated_at: string | null;
-  hearts: number;
+  upvotes: number;
 }
 
 interface ArgumentRow {
@@ -29,7 +29,7 @@ interface ArgumentRow {
   user_id: string;
   created_at: string;
   updated_at: string | null;
-  hearts: number;
+  upvotes: number;
 }
 
 interface EvidenceRow {
@@ -42,8 +42,6 @@ interface EvidenceRow {
   user_id: string;
   created_at: string;
   updated_at: string | null;
-  upvotes: number;
-  downvotes: number;
 }
 
 interface UserRow {
@@ -59,7 +57,7 @@ function rowToStatement(row: StatementRow, tags: string[]): Statement {
     id: row.id,
     text: row.text,
     tags,
-    hearts: row.hearts,
+    upvotes: row.upvotes,
     userId: row.user_id,
     createdAt: row.created_at,
     ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
@@ -73,7 +71,7 @@ function rowToArgument(row: ArgumentRow): Argument {
     stance: row.stance,
     title: row.title,
     summary: row.summary,
-    hearts: row.hearts,
+    upvotes: row.upvotes,
     userId: row.user_id,
     createdAt: row.created_at,
     ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
@@ -88,8 +86,6 @@ function rowToEvidence(row: EvidenceRow): Evidence {
     description: row.description,
     sourceUrl: row.source_url,
     sourceType: row.source_type as Evidence["sourceType"],
-    upvotes: row.upvotes,
-    downvotes: row.downvotes,
     userId: row.user_id,
     createdAt: row.created_at,
     ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
@@ -115,7 +111,7 @@ function getTagsForStatement(statementId: string): string[] {
 
 const stmtListQuery = db.prepare<[], StatementRow>(`
   SELECT s.*,
-    COUNT(v.id) as hearts
+    COUNT(v.id) as upvotes
   FROM statements s
   LEFT JOIN votes v ON v.target_type = 'statement' AND v.target_id = s.id AND v.vote_type = 'heart'
   GROUP BY s.id
@@ -124,7 +120,7 @@ const stmtListQuery = db.prepare<[], StatementRow>(`
 
 const stmtByIdQuery = db.prepare<[string], StatementRow>(`
   SELECT s.*,
-    COUNT(v.id) as hearts
+    COUNT(v.id) as upvotes
   FROM statements s
   LEFT JOIN votes v ON v.target_type = 'statement' AND v.target_id = s.id AND v.vote_type = 'heart'
   WHERE s.id = ?
@@ -133,7 +129,7 @@ const stmtByIdQuery = db.prepare<[string], StatementRow>(`
 
 const argsByStmtQuery = db.prepare<[string], ArgumentRow>(`
   SELECT a.*,
-    COUNT(v.id) as hearts
+    COUNT(v.id) as upvotes
   FROM arguments a
   LEFT JOIN votes v ON v.target_type = 'argument' AND v.target_id = a.id AND v.vote_type = 'heart'
   WHERE a.statement_id = ?
@@ -143,7 +139,7 @@ const argsByStmtQuery = db.prepare<[string], ArgumentRow>(`
 
 const argByIdQuery = db.prepare<[string], ArgumentRow>(`
   SELECT a.*,
-    COUNT(v.id) as hearts
+    COUNT(v.id) as upvotes
   FROM arguments a
   LEFT JOIN votes v ON v.target_type = 'argument' AND v.target_id = a.id AND v.vote_type = 'heart'
   WHERE a.id = ?
@@ -151,13 +147,9 @@ const argByIdQuery = db.prepare<[string], ArgumentRow>(`
 `);
 
 const evByArgQuery = db.prepare<[string], EvidenceRow>(`
-  SELECT e.*,
-    COUNT(CASE WHEN v.vote_type = 'up'   THEN 1 END) as upvotes,
-    COUNT(CASE WHEN v.vote_type = 'down' THEN 1 END) as downvotes
+  SELECT e.*
   FROM evidence e
-  LEFT JOIN votes v ON v.target_type = 'evidence' AND v.target_id = e.id
   WHERE e.argument_id = ?
-  GROUP BY e.id
   ORDER BY e.created_at DESC
 `);
 

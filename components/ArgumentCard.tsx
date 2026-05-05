@@ -1,18 +1,16 @@
 import Link from "next/link";
 import { Argument } from "@/lib/types";
-import { HeartButton } from "@/components/HeartButton";
+import { UpvoteButton } from "@/components/UpvoteButton";
 import { PostedBy } from "@/components/PostedBy";
 import { EditArgumentDialog } from "@/components/EditArgumentDialog";
 
 interface ArgumentCardProps {
   argument: Argument;
   userName: string;
-  evidenceUpvotes: number;
-  evidenceDownvotes: number;
   currentUserId?: string;
 }
 
-export function ArgumentCard({ argument, userName, evidenceUpvotes, evidenceDownvotes, currentUserId }: ArgumentCardProps) {
+export function ArgumentCard({ argument, userName, currentUserId }: ArgumentCardProps) {
   const isFor = argument.stance === "for";
 
   return (
@@ -32,19 +30,13 @@ export function ArgumentCard({ argument, userName, evidenceUpvotes, evidenceDown
           {argument.summary}
         </p>
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <HeartButton
+          <UpvoteButton
             id={argument.id}
             targetType="argument"
-            initialHearts={argument.hearts}
+            initialUpvotes={argument.upvotes}
             revalidatePath={`/statements/${argument.statementId}`}
             stopPropagation
           />
-          {(evidenceUpvotes > 0 || evidenceDownvotes > 0) && (
-            <span className="text-xs text-neutral-400">
-              Evidence: <span className="text-emerald-600">&uarr;{evidenceUpvotes}</span>{" "}
-              <span className="text-rose-500">&darr;{evidenceDownvotes}</span>
-            </span>
-          )}
         </div>
         <PostedBy userName={userName} createdAt={argument.createdAt} updatedAt={argument.updatedAt} />
       </Link>
