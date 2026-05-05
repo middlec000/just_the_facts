@@ -1,8 +1,5 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  // better-sqlite3 is a native Node addon; tell Next.js not to bundle it
-  serverExternalPackages: ["better-sqlite3"],
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;

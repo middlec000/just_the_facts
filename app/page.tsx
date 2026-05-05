@@ -4,35 +4,43 @@ import { AddStatementDialog } from "@/components/AddStatementDialog";
 import { getSession } from "@/lib/session";
 
 export default async function HomePage() {
-  const [session, allTags] = await Promise.all([getSession(), Promise.resolve(getAllTags())]);
+  const [session, allTags, statementsList] = await Promise.all([
+    getSession(),
+    getAllTags(),
+    getStatements(),
+  ]);
 
-  const statementsWithCounts = getStatements().map((statement) => {
-    const args = getArgumentsByStatementId(statement.id);
-    const user = getUserById(statement.userId);
-    const forArgs = args.filter((a) => a.stance === "for");
-    const againstArgs = args.filter((a) => a.stance === "against");
-    const allEvidence = args.flatMap((a) => getEvidenceByArgumentId(a.id));
-    const forArgumentUpvotes = forArgs.reduce((s, a) => s + a.upvotes, 0);
-    const againstArgumentUpvotes = againstArgs.reduce((s, a) => s + a.upvotes, 0);
-    const totalArgumentUpvotes = forArgumentUpvotes + againstArgumentUpvotes;
-    // Latest activity = newest createdAt across statement, arguments, evidence
-    const allDates = [
-      statement.createdAt,
-      ...args.map((a) => a.createdAt),
-      ...allEvidence.map((e) => e.createdAt),
-    ];
-    const latestActivityAt = allDates.reduce((a, b) => (a > b ? a : b));
-    return {
-      ...statement,
-      forCount: forArgs.length,
-      againstCount: againstArgs.length,
-      forArgumentUpvotes,
-      againstArgumentUpvotes,
-      totalArgumentUpvotes,
-      latestActivityAt,
-      userName: user?.name ?? "Unknown",
-    };
-  });
+  const statementsWithCounts = await Promise.all(
+    statementsList.map(async (statement) => {
+      const [args, user] = await Promise.all([
+        getArgumentsByStatementId(statement.id),
+        getUserById(statement.userId),
+      ]);
+      const forArgs = args.filter((a) => a.stance === "for");
+      const againstArgs = args.filter((a) => a.stance === "against");
+      const evidenceLists = await Promise.all(args.map((a) => getEvidenceByArgumentId(a.id)));
+      const allEvidence = evidenceLists.flat();
+      const forArgumentUpvotes = forArgs.reduce((s, a) => s + a.upvotes, 0);
+      const againstArgumentUpvotes = againstArgs.reduce((s, a) => s + a.upvotes, 0);
+      const totalArgumentUpvotes = forArgumentUpvotes + againstArgumentUpvotes;
+      const allDates = [
+        statement.createdAt,
+        ...args.map((a) => a.createdAt),
+        ...allEvidence.map((e) => e.createdAt),
+      ];
+      const latestActivityAt = allDates.reduce((a, b) => (a > b ? a : b));
+      return {
+        ...statement,
+        forCount: forArgs.length,
+        againstCount: againstArgs.length,
+        forArgumentUpvotes,
+        againstArgumentUpvotes,
+        totalArgumentUpvotes,
+        latestActivityAt,
+        userName: user?.name ?? "Unknown",
+      };
+    }),
+  );
 
   return (
     <div>

@@ -70,7 +70,7 @@ export async function signUp(
     return { error: "Password must be at least 6 characters." };
   if (password !== confirmPassword) return { error: "Passwords do not match." };
 
-  const existing = getUserByUsername(username);
+  const existing = await getUserByUsername(username);
   if (existing) return { error: "Username is already taken." };
 
   const id = crypto.randomUUID();
@@ -78,7 +78,7 @@ export async function signUp(
   const hash = hashPassword(password, salt);
   const passwordHash = `${salt}:${hash}`;
 
-  createUser(id, username, username, passwordHash);
+  await createUser(id, username, username, passwordHash);
 
   await setSession(id);
   redirect("/");
@@ -97,7 +97,7 @@ export async function logIn(
   if (!username || !password)
     return { error: "Username and password are required." };
 
-  const user = getUserByUsername(username);
+  const user = await getUserByUsername(username);
   if (!user) return { error: "Invalid username or password." };
 
   const [salt, storedHash] = user.passwordHash.split(":");

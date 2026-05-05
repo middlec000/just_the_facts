@@ -27,7 +27,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getSession();
-  const user = session ? getUserById(session.userId) : null;
+  const user = session ? await getUserById(session.userId) : null;
 
   return (
     <html lang="en">

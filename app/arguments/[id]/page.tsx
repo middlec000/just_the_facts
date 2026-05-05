@@ -19,16 +19,22 @@ interface ArgumentPageProps {
 
 export default async function ArgumentPage({ params }: ArgumentPageProps) {
   const [{ id }, session] = await Promise.all([params, getSession()]);
-  const argument = getArgumentById(id);
+  const argument = await getArgumentById(id);
 
   if (!argument) {
     notFound();
   }
 
-  const statement = getStatementForArgument(argument.id);
-  const evidenceList = getEvidenceByArgumentId(argument.id);
+  const [statement, evidenceList, argumentUser] = await Promise.all([
+    getStatementForArgument(argument.id),
+    getEvidenceByArgumentId(argument.id),
+    getUserById(argument.userId),
+  ]);
   const isFor = argument.stance === "for";
-  const argumentUser = getUserById(argument.userId);
+
+  const evUserIds = [...new Set(evidenceList.map((e) => e.userId))];
+  const evUserList = await Promise.all(evUserIds.map((uid) => getUserById(uid)));
+  const evUserMap = Object.fromEntries(evUserIds.map((uid, i) => [uid, evUserList[i]]));
 
   return (
     <div className="max-w-3xl">
@@ -117,7 +123,7 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
               <EvidenceItem
                 key={ev.id}
                 evidence={ev}
-                userName={getUserById(ev.userId)?.name ?? "Unknown"}
+                userName={evUserMap[ev.userId]?.name ?? "Unknown"}
                 currentUserId={session?.userId}
               />
             ))}

@@ -1,10 +1,9 @@
 /**
  * Seeds the database with mock data on first run.
- * Runs inside a transaction; safe to call on every startup because it checks
- * whether the users table is empty before doing anything.
+ * Safe to call repeatedly — checks whether the users table is empty first.
  */
 
-import type Database from "better-sqlite3";
+import { sql } from "./db";
 import { scryptSync } from "crypto";
 import {
   users as seedUsers,
@@ -17,88 +16,59 @@ function hashPassword(password: string, salt: string): string {
   return scryptSync(password, salt, 64).toString("hex");
 }
 
-/** password_hash string in the format `salt:hash` */
 function makePasswordHash(password: string): string {
   const salt = "seed-salt-fixed";
   return `${salt}:${hashPassword(password, salt)}`;
 }
 
-export function seedIfEmpty(db: Database.Database): void {
-  const count = (
-    db.prepare("SELECT COUNT(*) as n FROM users").get() as { n: number }
-  ).n;
+export async function seedIfEmpty(): Promise<void> {
+  const rows = await sql`SELECT COUNT(*)::int AS n FROM users` as { n: number }[];
+  if (rows[0].n > 0) return;
 
-  if (count > 0) return; // already seeded
+  for (const u of seedUsers) {
+    await sql`
+      INSERT INTO users (id, name, username, password_hash, created_at)
+      VALUES (${u.id}, ${u.name}, ${u.username}, ${makePasswordHash("password")}, ${new Date().toISOString()})
+      ON CONFLICT DO NOTHING
+    `;
+  }
 
-  const seed = db.transaction(() => {
-    // --- users ---
-    const insertUser = db.prepare(
-      "INSERT OR IGNORE INTO users (id, name, username, password_hash, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
-    );
-    for (const u of seedUsers) {
-      insertUser.run(u.id, u.name, u.username, makePasswordHash("password"));
+  for (const s of seedStatements) {
+    await sql`
+      INSERT INTO statements (id, text, user_id, created_at)
+      VALUES (${s.id}, ${s.text}, ${s.userId}, ${s.createdAt})
+      ON CONFLICT DO NOTHING
+    `;
+    for (const tag of s.tags) {
+      await sql`
+        WITH upserted AS (
+          INSERT INTO tags (label) VALUES (${tag})
+          ON CONFLICT (label) DO UPDATE SET label = EXCLUDED.label
+          RETURNING id
+        )
+        INSERT INTO statement_tags (statement_id, tag_id)
+        SELECT ${s.id}, id FROM upserted
+        ON CONFLICT DO NOTHING
+      `;
     }
+  }
 
-    // --- tags (upsert unique labels) ---
-    const upsertTag = db.prepare(
-      "INSERT OR IGNORE INTO tags (label) VALUES (?)",
-    );
-    const tagIdFor = db.prepare("SELECT id FROM tags WHERE label = ?");
+  for (const a of seedArguments) {
+    await sql`
+      INSERT INTO arguments (id, statement_id, stance, title, summary, user_id, created_at)
+      VALUES (${a.id}, ${a.statementId}, ${a.stance}, ${a.title}, ${a.summary}, ${a.userId}, ${a.createdAt})
+      ON CONFLICT DO NOTHING
+    `;
+  }
 
-    // --- statements + statement_tags ---
-    const insertStatement = db.prepare(`
-      INSERT OR IGNORE INTO statements (id, text, user_id, created_at)
-      VALUES (?, ?, ?, ?)
-    `);
-    const insertStmtTag = db.prepare(`
-      INSERT OR IGNORE INTO statement_tags (statement_id, tag_id) VALUES (?, ?)
-    `);
-    for (const s of seedStatements) {
-      insertStatement.run(s.id, s.text, s.userId, s.createdAt);
+  for (const e of seedEvidence) {
+    await sql`
+      INSERT INTO evidence (id, argument_id, title, description, source_url, source_type, user_id, created_at)
+      VALUES (${e.id}, ${e.argumentId}, ${e.title}, ${e.description}, ${e.sourceUrl}, ${e.sourceType}, ${e.userId}, ${e.createdAt})
+      ON CONFLICT DO NOTHING
+    `;
+  }
 
-      for (const tag of s.tags) {
-        upsertTag.run(tag);
-        const row = tagIdFor.get(tag) as { id: number };
-        insertStmtTag.run(s.id, row.id);
-      }
-    }
-
-    // --- arguments ---
-    const insertArg = db.prepare(`
-      INSERT OR IGNORE INTO arguments (id, statement_id, stance, title, summary, user_id, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    for (const a of seedArguments) {
-      insertArg.run(
-        a.id,
-        a.statementId,
-        a.stance,
-        a.title,
-        a.summary,
-        a.userId,
-        a.createdAt,
-      );
-    }
-
-    // --- evidence ---
-    const insertEv = db.prepare(`
-      INSERT OR IGNORE INTO evidence (id, argument_id, title, description, source_url, source_type, user_id, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    for (const e of seedEvidence) {
-      insertEv.run(
-        e.id,
-        e.argumentId,
-        e.title,
-        e.description,
-        e.sourceUrl,
-        e.sourceType,
-        e.userId,
-        e.createdAt,
-      );
-    }
-  });
-
-  seed();
   console.log("[db] Seeded database from mock data.");
 }
+

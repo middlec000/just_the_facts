@@ -14,22 +14,6 @@ export const statements: Statement[] = [
     userId: "user-1",
     createdAt: "2025-01-15T10:00:00Z",
   },
-  {
-    id: "stmt-2",
-    text: "Regular physical exercise reduces the risk of cardiovascular disease",
-    tags: ["health", "science", "medicine"],
-    upvotes: 9,
-    userId: "user-2",
-    createdAt: "2025-02-01T10:00:00Z",
-  },
-  {
-    id: "stmt-3",
-    text: "Social media use is linked to increased rates of anxiety in teenagers",
-    tags: ["health", "technology", "society"],
-    upvotes: 15,
-    userId: "user-1",
-    createdAt: "2025-02-10T10:00:00Z",
-  },
 ];
 
 export const arguments_: Argument[] = [

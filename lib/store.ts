@@ -1,10 +1,9 @@
 /**
- * SQLite-backed data store.
- * Exports the same function signatures as the previous JSON-file store so
- * that no page or component imports need to change.
+ * Neon-backed data store.
+ * All functions are async; callers must await them.
  */
 
-import { db } from "./db";
+import { sql } from "./db";
 import type { Statement, Argument, Evidence, User } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -57,7 +56,7 @@ function rowToStatement(row: StatementRow, tags: string[]): Statement {
     id: row.id,
     text: row.text,
     tags,
-    upvotes: row.upvotes,
+    upvotes: Number(row.upvotes),
     userId: row.user_id,
     createdAt: row.created_at,
     ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
@@ -71,7 +70,7 @@ function rowToArgument(row: ArgumentRow): Argument {
     stance: row.stance,
     title: row.title,
     summary: row.summary,
-    upvotes: row.upvotes,
+    upvotes: Number(row.upvotes),
     userId: row.user_id,
     createdAt: row.created_at,
     ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
@@ -92,123 +91,104 @@ function rowToEvidence(row: EvidenceRow): Evidence {
   };
 }
 
-// Fetch tags for a statement
-function getTagsForStatement(statementId: string): string[] {
-  const rows = db
-    .prepare(
-      `SELECT t.label FROM tags t
-       JOIN statement_tags st ON st.tag_id = t.id
-       WHERE st.statement_id = ?
-       ORDER BY t.label`,
-    )
-    .all(statementId) as { label: string }[];
+async function getTagsForStatement(statementId: string): Promise<string[]> {
+  const rows = await sql`
+    SELECT t.label FROM tags t
+    JOIN statement_tags st ON st.tag_id = t.id
+    WHERE st.statement_id = ${statementId}
+    ORDER BY t.label
+  ` as { label: string }[];
   return rows.map((r) => r.label);
 }
-
-// ---------------------------------------------------------------------------
-// Prepared statements (created lazily at module level for reuse)
-// ---------------------------------------------------------------------------
-
-const stmtListQuery = db.prepare<[], StatementRow>(`
-  SELECT s.*,
-    COUNT(v.id) as upvotes
-  FROM statements s
-  LEFT JOIN votes v ON v.target_type = 'statement' AND v.target_id = s.id AND v.vote_type = 'heart'
-  GROUP BY s.id
-  ORDER BY s.created_at DESC
-`);
-
-const stmtByIdQuery = db.prepare<[string], StatementRow>(`
-  SELECT s.*,
-    COUNT(v.id) as upvotes
-  FROM statements s
-  LEFT JOIN votes v ON v.target_type = 'statement' AND v.target_id = s.id AND v.vote_type = 'heart'
-  WHERE s.id = ?
-  GROUP BY s.id
-`);
-
-const argsByStmtQuery = db.prepare<[string], ArgumentRow>(`
-  SELECT a.*,
-    COUNT(v.id) as upvotes
-  FROM arguments a
-  LEFT JOIN votes v ON v.target_type = 'argument' AND v.target_id = a.id AND v.vote_type = 'heart'
-  WHERE a.statement_id = ?
-  GROUP BY a.id
-  ORDER BY a.created_at DESC
-`);
-
-const argByIdQuery = db.prepare<[string], ArgumentRow>(`
-  SELECT a.*,
-    COUNT(v.id) as upvotes
-  FROM arguments a
-  LEFT JOIN votes v ON v.target_type = 'argument' AND v.target_id = a.id AND v.vote_type = 'heart'
-  WHERE a.id = ?
-  GROUP BY a.id
-`);
-
-const evByArgQuery = db.prepare<[string], EvidenceRow>(`
-  SELECT e.*
-  FROM evidence e
-  WHERE e.argument_id = ?
-  ORDER BY e.created_at DESC
-`);
-
-const userByIdQuery = db.prepare<[string], UserRow>(
-  "SELECT * FROM users WHERE id = ?",
-);
-
-const allTagsQuery = db.prepare<[], { label: string }>(
-  "SELECT DISTINCT label FROM tags ORDER BY label",
-);
 
 // ---------------------------------------------------------------------------
 // Readers
 // ---------------------------------------------------------------------------
 
-export function getStatements(): Statement[] {
-  const rows = stmtListQuery.all();
-  return rows.map((row) => rowToStatement(row, getTagsForStatement(row.id)));
+export async function getStatements(): Promise<Statement[]> {
+  const rows = await sql`
+    SELECT s.*, COUNT(v.id)::int AS upvotes
+    FROM statements s
+    LEFT JOIN votes v
+      ON v.target_type = 'statement' AND v.target_id = s.id AND v.vote_type = 'heart'
+    GROUP BY s.id
+    ORDER BY s.created_at DESC
+  ` as StatementRow[];
+  return Promise.all(
+    rows.map((row) =>
+      getTagsForStatement(row.id).then((tags) => rowToStatement(row, tags)),
+    ),
+  );
 }
 
-export function getStatementById(id: string): Statement | undefined {
-  const row = stmtByIdQuery.get(id);
+export async function getStatementById(id: string): Promise<Statement | undefined> {
+  const rows = await sql`
+    SELECT s.*, COUNT(v.id)::int AS upvotes
+    FROM statements s
+    LEFT JOIN votes v
+      ON v.target_type = 'statement' AND v.target_id = s.id AND v.vote_type = 'heart'
+    WHERE s.id = ${id}
+    GROUP BY s.id
+  ` as StatementRow[];
+  const row = rows[0];
   if (!row) return undefined;
-  return rowToStatement(row, getTagsForStatement(id));
+  return rowToStatement(row, await getTagsForStatement(id));
 }
 
-export function getArgumentsByStatementId(statementId: string): Argument[] {
-  return argsByStmtQuery.all(statementId).map(rowToArgument);
+export async function getArgumentsByStatementId(statementId: string): Promise<Argument[]> {
+  const rows = await sql`
+    SELECT a.*, COUNT(v.id)::int AS upvotes
+    FROM arguments a
+    LEFT JOIN votes v
+      ON v.target_type = 'argument' AND v.target_id = a.id AND v.vote_type = 'heart'
+    WHERE a.statement_id = ${statementId}
+    GROUP BY a.id
+    ORDER BY a.created_at DESC
+  ` as ArgumentRow[];
+  return rows.map(rowToArgument);
 }
 
-export function getArgumentById(id: string): Argument | undefined {
-  const row = argByIdQuery.get(id);
+export async function getArgumentById(id: string): Promise<Argument | undefined> {
+  const rows = await sql`
+    SELECT a.*, COUNT(v.id)::int AS upvotes
+    FROM arguments a
+    LEFT JOIN votes v
+      ON v.target_type = 'argument' AND v.target_id = a.id AND v.vote_type = 'heart'
+    WHERE a.id = ${id}
+    GROUP BY a.id
+  ` as ArgumentRow[];
+  const row = rows[0];
   return row ? rowToArgument(row) : undefined;
 }
 
-export function getEvidenceByArgumentId(argumentId: string): Evidence[] {
-  return evByArgQuery.all(argumentId).map(rowToEvidence);
+export async function getEvidenceByArgumentId(argumentId: string): Promise<Evidence[]> {
+  const rows = await sql`
+    SELECT e.*
+    FROM evidence e
+    WHERE e.argument_id = ${argumentId}
+    ORDER BY e.created_at DESC
+  ` as EvidenceRow[];
+  return rows.map(rowToEvidence);
 }
 
-export function getStatementForArgument(
-  argumentId: string,
-): Statement | undefined {
-  const arg = getArgumentById(argumentId);
+export async function getStatementForArgument(argumentId: string): Promise<Statement | undefined> {
+  const arg = await getArgumentById(argumentId);
   if (!arg) return undefined;
   return getStatementById(arg.statementId);
 }
 
-export function getUserById(id: string): User | undefined {
-  const row = userByIdQuery.get(id);
+export async function getUserById(id: string): Promise<User | undefined> {
+  const rows = await sql`SELECT * FROM users WHERE id = ${id}` as UserRow[];
+  const row = rows[0];
   if (!row) return undefined;
   return { id: row.id, name: row.name, username: row.username };
 }
 
-export function getUserByUsername(
+export async function getUserByUsername(
   username: string,
-): (User & { passwordHash: string }) | undefined {
-  const row = db
-    .prepare<[string], UserRow>("SELECT * FROM users WHERE username = ?")
-    .get(username);
+): Promise<(User & { passwordHash: string }) | undefined> {
+  const rows = await sql`SELECT * FROM users WHERE username = ${username}` as UserRow[];
+  const row = rows[0];
   if (!row) return undefined;
   return {
     id: row.id,
@@ -218,66 +198,65 @@ export function getUserByUsername(
   };
 }
 
-export function createUser(
+export async function createUser(
   id: string,
   name: string,
   username: string,
   passwordHash: string,
-): void {
-  db.prepare(
-    `INSERT INTO users (id, name, username, password_hash, created_at)
-     VALUES (?, ?, ?, ?, datetime('now'))`,
-  ).run(id, name, username, passwordHash);
+): Promise<void> {
+  await sql`
+    INSERT INTO users (id, name, username, password_hash, created_at)
+    VALUES (${id}, ${name}, ${username}, ${passwordHash}, ${new Date().toISOString()})
+  `;
 }
 
-export function getAllTags(): string[] {
-  return allTagsQuery.all().map((r) => r.label);
+export async function getAllTags(): Promise<string[]> {
+  const rows = await sql`SELECT DISTINCT label FROM tags ORDER BY label` as { label: string }[];
+  return rows.map((r) => r.label);
 }
 
 // ---------------------------------------------------------------------------
 // Writers
 // ---------------------------------------------------------------------------
 
-const insertStatement = db.prepare(
-  "INSERT INTO statements (id, text, user_id, created_at) VALUES (?, ?, ?, ?)",
-);
-const upsertTag = db.prepare("INSERT OR IGNORE INTO tags (label) VALUES (?)");
-const tagIdFor = db.prepare<[string], { id: number }>(
-  "SELECT id FROM tags WHERE label = ?",
-);
-const insertStmtTag = db.prepare(
-  "INSERT OR IGNORE INTO statement_tags (statement_id, tag_id) VALUES (?, ?)",
-);
-
-export function addStatement(statement: Statement): void {
-  const run = db.transaction(() => {
-    insertStatement.run(
-      statement.id,
-      statement.text,
-      statement.userId,
-      statement.createdAt,
-    );
-    for (const tag of statement.tags) {
-      upsertTag.run(tag);
-      const row = tagIdFor.get(tag)!;
-      insertStmtTag.run(statement.id, row.id);
-    }
-  });
-  run();
+export async function addStatement(statement: Statement): Promise<void> {
+  await sql`
+    INSERT INTO statements (id, text, user_id, created_at)
+    VALUES (${statement.id}, ${statement.text}, ${statement.userId}, ${statement.createdAt})
+  `;
+  for (const tag of statement.tags) {
+    // Upsert tag and link to statement in one CTE
+    await sql`
+      WITH upserted AS (
+        INSERT INTO tags (label) VALUES (${tag})
+        ON CONFLICT (label) DO UPDATE SET label = EXCLUDED.label
+        RETURNING id
+      )
+      INSERT INTO statement_tags (statement_id, tag_id)
+      SELECT ${statement.id}, id FROM upserted
+      ON CONFLICT DO NOTHING
+    `;
+  }
 }
 
-export function addArgument(argument: Argument): void {
-  db.prepare(`
+export async function addArgument(argument: Argument): Promise<void> {
+  await sql`
     INSERT INTO arguments (id, statement_id, stance, title, summary, user_id, created_at)
-    VALUES (@id, @statementId, @stance, @title, @summary, @userId, @createdAt)
-  `).run(argument);
+    VALUES (
+      ${argument.id}, ${argument.statementId}, ${argument.stance},
+      ${argument.title}, ${argument.summary}, ${argument.userId}, ${argument.createdAt}
+    )
+  `;
 }
 
-export function addEvidence(ev: Evidence): void {
-  db.prepare(`
+export async function addEvidence(ev: Evidence): Promise<void> {
+  await sql`
     INSERT INTO evidence (id, argument_id, title, description, source_url, source_type, user_id, created_at)
-    VALUES (@id, @argumentId, @title, @description, @sourceUrl, @sourceType, @userId, @createdAt)
-  `).run(ev);
+    VALUES (
+      ${ev.id}, ${ev.argumentId}, ${ev.title}, ${ev.description},
+      ${ev.sourceUrl}, ${ev.sourceType}, ${ev.userId}, ${ev.createdAt}
+    )
+  `;
 }
 
 // ---------------------------------------------------------------------------
@@ -287,50 +266,42 @@ export function addEvidence(ev: Evidence): void {
 type TargetType = "statement" | "argument" | "evidence";
 type VoteType = "heart" | "up" | "down";
 
-/**
- * Toggle a vote: inserts if absent, deletes if already present.
- * Returns whether the vote is now active (true) or removed (false).
- */
-export function toggleVote(
+export async function toggleVote(
   userId: string,
   targetType: TargetType,
   targetId: string,
   voteType: VoteType,
-): boolean {
-  const existing = db
-    .prepare(
-      `SELECT id FROM votes
-       WHERE user_id = ? AND target_type = ? AND target_id = ? AND vote_type = ?`,
-    )
-    .get(userId, targetType, targetId, voteType);
-
-  if (existing) {
-    db.prepare(
-      `DELETE FROM votes
-       WHERE user_id = ? AND target_type = ? AND target_id = ? AND vote_type = ?`,
-    ).run(userId, targetType, targetId, voteType);
+): Promise<boolean> {
+  const existing = await sql`
+    SELECT id FROM votes
+    WHERE user_id = ${userId} AND target_type = ${targetType}
+      AND target_id = ${targetId} AND vote_type = ${voteType}
+  `;
+  if (existing.length > 0) {
+    await sql`
+      DELETE FROM votes
+      WHERE user_id = ${userId} AND target_type = ${targetType}
+        AND target_id = ${targetId} AND vote_type = ${voteType}
+    `;
     return false;
   } else {
-    db.prepare(
-      `INSERT INTO votes (target_type, target_id, vote_type, user_id, created_at)
-       VALUES (?, ?, ?, ?, datetime('now'))`,
-    ).run(targetType, targetId, voteType, userId);
+    await sql`
+      INSERT INTO votes (target_type, target_id, vote_type, user_id, created_at)
+      VALUES (${targetType}, ${targetId}, ${voteType}, ${userId}, ${new Date().toISOString()})
+    `;
     return true;
   }
 }
 
-/** Returns the set of vote types the user has cast on a target. */
-export function getUserVotesForTarget(
+export async function getUserVotesForTarget(
   userId: string,
   targetType: TargetType,
   targetId: string,
-): VoteType[] {
-  const rows = db
-    .prepare(
-      `SELECT vote_type FROM votes
-       WHERE user_id = ? AND target_type = ? AND target_id = ?`,
-    )
-    .all(userId, targetType, targetId) as { vote_type: string }[];
+): Promise<VoteType[]> {
+  const rows = await sql`
+    SELECT vote_type FROM votes
+    WHERE user_id = ${userId} AND target_type = ${targetType} AND target_id = ${targetId}
+  ` as { vote_type: string }[];
   return rows.map((r) => r.vote_type as VoteType);
 }
 
@@ -338,100 +309,73 @@ export function getUserVotesForTarget(
 // Editors (archive previous version, then update main row)
 // ---------------------------------------------------------------------------
 
-interface StatementUpdateRow {
-  user_id: string;
-  text: string;
-}
-
-export function updateStatement(
+export async function updateStatement(
   id: string,
   userId: string,
   data: { text: string; tags: string[] },
-): void {
-  const run = db.transaction(() => {
-    const row = db
-      .prepare<[string], StatementUpdateRow>(
-        "SELECT user_id, text FROM statements WHERE id = ?",
+): Promise<void> {
+  const rows = await sql`
+    SELECT user_id, text FROM statements WHERE id = ${id}
+  ` as { user_id: string; text: string }[];
+  const row = rows[0];
+  if (!row) throw new Error("Statement not found.");
+  if (row.user_id !== userId) throw new Error("Not authorized.");
+
+  const currentTags = await getTagsForStatement(id);
+
+  await sql`
+    INSERT INTO statement_versions (id, statement_id, text, tags, created_at, edited_by)
+    VALUES (
+      ${crypto.randomUUID()}, ${id}, ${row.text},
+      ${currentTags.join(",")}, ${new Date().toISOString()}, ${userId}
+    )
+  `;
+  await sql`
+    UPDATE statements SET text = ${data.text}, updated_at = ${new Date().toISOString()}
+    WHERE id = ${id}
+  `;
+  await sql`DELETE FROM statement_tags WHERE statement_id = ${id}`;
+  for (const tag of data.tags) {
+    await sql`
+      WITH upserted AS (
+        INSERT INTO tags (label) VALUES (${tag})
+        ON CONFLICT (label) DO UPDATE SET label = EXCLUDED.label
+        RETURNING id
       )
-      .get(id);
-    if (!row) throw new Error("Statement not found.");
-    if (row.user_id !== userId) throw new Error("Not authorized.");
-
-    const currentTags = getTagsForStatement(id);
-    db.prepare(
-      `INSERT INTO statement_versions (id, statement_id, text, tags, created_at, edited_by)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    ).run(
-      crypto.randomUUID(),
-      id,
-      row.text,
-      currentTags.join(","),
-      new Date().toISOString(),
-      userId,
-    );
-
-    db.prepare(
-      "UPDATE statements SET text = ?, updated_at = ? WHERE id = ?",
-    ).run(data.text, new Date().toISOString(), id);
-
-    db.prepare("DELETE FROM statement_tags WHERE statement_id = ?").run(id);
-    for (const tag of data.tags) {
-      upsertTag.run(tag);
-      const tagRow = tagIdFor.get(tag)!;
-      insertStmtTag.run(id, tagRow.id);
-    }
-  });
-  run();
+      INSERT INTO statement_tags (statement_id, tag_id)
+      SELECT ${id}, id FROM upserted
+      ON CONFLICT DO NOTHING
+    `;
+  }
 }
 
-interface ArgumentUpdateRow {
-  user_id: string;
-  title: string;
-  summary: string;
-}
-
-export function updateArgument(
+export async function updateArgument(
   id: string,
   userId: string,
   data: { title: string; summary: string },
-): void {
-  const run = db.transaction(() => {
-    const row = db
-      .prepare<[string], ArgumentUpdateRow>(
-        "SELECT user_id, title, summary FROM arguments WHERE id = ?",
-      )
-      .get(id);
-    if (!row) throw new Error("Argument not found.");
-    if (row.user_id !== userId) throw new Error("Not authorized.");
+): Promise<void> {
+  const rows = await sql`
+    SELECT user_id, title, summary FROM arguments WHERE id = ${id}
+  ` as { user_id: string; title: string; summary: string }[];
+  const row = rows[0];
+  if (!row) throw new Error("Argument not found.");
+  if (row.user_id !== userId) throw new Error("Not authorized.");
 
-    db.prepare(
-      `INSERT INTO argument_versions (id, argument_id, title, summary, created_at, edited_by)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    ).run(
-      crypto.randomUUID(),
-      id,
-      row.title,
-      row.summary,
-      new Date().toISOString(),
-      userId,
-    );
-
-    db.prepare(
-      "UPDATE arguments SET title = ?, summary = ?, updated_at = ? WHERE id = ?",
-    ).run(data.title, data.summary, new Date().toISOString(), id);
-  });
-  run();
+  await sql`
+    INSERT INTO argument_versions (id, argument_id, title, summary, created_at, edited_by)
+    VALUES (
+      ${crypto.randomUUID()}, ${id}, ${row.title},
+      ${row.summary}, ${new Date().toISOString()}, ${userId}
+    )
+  `;
+  await sql`
+    UPDATE arguments SET title = ${data.title}, summary = ${data.summary},
+      updated_at = ${new Date().toISOString()}
+    WHERE id = ${id}
+  `;
 }
 
-interface EvidenceUpdateRow {
-  user_id: string;
-  title: string;
-  description: string;
-  source_url: string;
-  source_type: string;
-}
-
-export function updateEvidence(
+export async function updateEvidence(
   id: string,
   userId: string,
   data: {
@@ -440,41 +384,29 @@ export function updateEvidence(
     sourceUrl: string;
     sourceType: Evidence["sourceType"];
   },
-): void {
-  const run = db.transaction(() => {
-    const row = db
-      .prepare<[string], EvidenceUpdateRow>(
-        "SELECT user_id, title, description, source_url, source_type FROM evidence WHERE id = ?",
-      )
-      .get(id);
-    if (!row) throw new Error("Evidence not found.");
-    if (row.user_id !== userId) throw new Error("Not authorized.");
+): Promise<void> {
+  const rows = await sql`
+    SELECT user_id, title, description, source_url, source_type FROM evidence WHERE id = ${id}
+  ` as { user_id: string; title: string; description: string; source_url: string; source_type: string }[];
+  const row = rows[0];
+  if (!row) throw new Error("Evidence not found.");
+  if (row.user_id !== userId) throw new Error("Not authorized.");
 
-    db.prepare(
-      `INSERT INTO evidence_versions (id, evidence_id, title, description, source_url, source_type, created_at, edited_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(
-      crypto.randomUUID(),
-      id,
-      row.title,
-      row.description,
-      row.source_url,
-      row.source_type,
-      new Date().toISOString(),
-      userId,
-    );
-
-    db.prepare(
-      "UPDATE evidence SET title = ?, description = ?, source_url = ?, source_type = ?, updated_at = ? WHERE id = ?",
-    ).run(
-      data.title,
-      data.description,
-      data.sourceUrl,
-      data.sourceType,
-      new Date().toISOString(),
-      id,
-    );
-  });
-  run();
+  await sql`
+    INSERT INTO evidence_versions (id, evidence_id, title, description, source_url, source_type, created_at, edited_by)
+    VALUES (
+      ${crypto.randomUUID()}, ${id}, ${row.title}, ${row.description},
+      ${row.source_url}, ${row.source_type}, ${new Date().toISOString()}, ${userId}
+    )
+  `;
+  await sql`
+    UPDATE evidence
+    SET title = ${data.title}, description = ${data.description},
+        source_url = ${data.sourceUrl}, source_type = ${data.sourceType},
+        updated_at = ${new Date().toISOString()}
+    WHERE id = ${id}
+  `;
 }
+
+
 

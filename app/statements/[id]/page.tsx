@@ -13,16 +13,22 @@ interface StatementPageProps {
 
 export default async function StatementPage({ params }: StatementPageProps) {
   const [{ id }, session] = await Promise.all([params, getSession()]);
-  const statement = getStatementById(id);
+  const statement = await getStatementById(id);
 
   if (!statement) {
     notFound();
   }
 
-  const allArguments = getArgumentsByStatementId(statement.id);
+  const [allArguments, statementUser] = await Promise.all([
+    getArgumentsByStatementId(statement.id),
+    getUserById(statement.userId),
+  ]);
   const argumentsFor = allArguments.filter((a) => a.stance === "for");
   const argumentsAgainst = allArguments.filter((a) => a.stance === "against");
-  const statementUser = getUserById(statement.userId);
+
+  const argUserIds = [...new Set(allArguments.map((a) => a.userId))];
+  const argUserList = await Promise.all(argUserIds.map((uid) => getUserById(uid)));
+  const argUserMap = Object.fromEntries(argUserIds.map((uid, i) => [uid, argUserList[i]]));
 
   const forArgumentUpvotes = argumentsFor.reduce((s, a) => s + a.upvotes, 0);
   const againstArgumentUpvotes = argumentsAgainst.reduce((s, a) => s + a.upvotes, 0);
@@ -84,7 +90,7 @@ export default async function StatementPage({ params }: StatementPageProps) {
                 <ArgumentCard
                   key={arg.id}
                   argument={arg}
-                  userName={getUserById(arg.userId)?.name ?? "Unknown"}
+                  userName={argUserMap[arg.userId]?.name ?? "Unknown"}
                   currentUserId={session?.userId}
                 />
               ))
@@ -111,7 +117,7 @@ export default async function StatementPage({ params }: StatementPageProps) {
                 <ArgumentCard
                   key={arg.id}
                   argument={arg}
-                  userName={getUserById(arg.userId)?.name ?? "Unknown"}
+                  userName={argUserMap[arg.userId]?.name ?? "Unknown"}
                   currentUserId={session?.userId}
                 />
               ))

@@ -40,7 +40,7 @@ export async function createStatement(formData: FormData) {
     createdAt: new Date().toISOString(),
   };
 
-  addStatement(statement);
+  await addStatement(statement);
   revalidatePath("/");
   return { id: statement.id };
 }
@@ -71,7 +71,7 @@ export async function createArgument(formData: FormData) {
     createdAt: new Date().toISOString(),
   };
 
-  addArgument(argument);
+  await addArgument(argument);
   revalidatePath(`/statements/${statementId}`);
   return { id: argument.id };
 }
@@ -107,7 +107,7 @@ export async function createEvidence(formData: FormData) {
     createdAt: new Date().toISOString(),
   };
 
-  addEvidence(ev);
+  await addEvidence(ev);
   revalidatePath(`/arguments/${argumentId}`);
   if (statementId) revalidatePath(`/statements/${statementId}`);
   return { id: ev.id };
@@ -131,7 +131,7 @@ export async function editStatement(id: string, formData: FormData) {
         .filter(Boolean)
     : [];
 
-  updateStatement(id, userId, { text, tags });
+  await updateStatement(id, userId, { text, tags });
   revalidatePath("/");
   revalidatePath(`/statements/${id}`);
 }
@@ -145,7 +145,7 @@ export async function editArgument(id: string, formData: FormData) {
   if (!title) throw new Error("Title is required.");
   if (!summary) throw new Error("Summary is required.");
 
-  updateArgument(id, userId, { title, summary });
+  await updateArgument(id, userId, { title, summary });
   revalidatePath(`/arguments/${id}`);
   if (statementId) revalidatePath(`/statements/${statementId}`);
 }
@@ -164,7 +164,7 @@ export async function editEvidence(id: string, formData: FormData) {
   if (!title) throw new Error("Title is required.");
   if (!description) throw new Error("Description is required.");
 
-  updateEvidence(id, userId, { title, description, sourceUrl, sourceType });
+  await updateEvidence(id, userId, { title, description, sourceUrl, sourceType });
   revalidatePath(`/arguments/${argumentId}`);
 }
 
@@ -178,7 +178,7 @@ export async function castUpvote(
   revalidate: string,
 ): Promise<{ active: boolean }> {
   const userId = await requireUserId();
-  const active = toggleVote(userId, targetType, targetId, "heart");
+  const active = await toggleVote(userId, targetType, targetId, "heart");
   revalidatePath(revalidate);
   return { active };
 }
