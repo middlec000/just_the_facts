@@ -45,6 +45,12 @@ export default async function RootLayout({
 
             {user ? (
               <div className="flex items-center gap-4">
+                <Link
+                  href="/about"
+                  className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
+                >
+                  About
+                </Link>
                 <span className="text-sm text-neutral-600">
                   {user.username}
                 </span>
@@ -58,12 +64,20 @@ export default async function RootLayout({
                 </form>
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="text-sm font-medium text-neutral-700 hover:text-neutral-900 transition-colors"
-              >
-                Log in
-              </Link>
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/about"
+                  className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
+                >
+                  About
+                </Link>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-neutral-700 hover:text-neutral-900 transition-colors"
+                >
+                  Log in
+                </Link>
+              </div>
             )}
           </nav>
         </header>
