@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getStatementById, getArgumentsByStatementId, getUserById } from "@/lib/store";
+import { getStatementById, getArgumentsByStatementId, getUserById, getReviewForStatement, getReviewByUserForStatement } from "@/lib/store";
 import { ArgumentCard } from "@/components/ArgumentCard";
 import { PostedBy } from "@/components/PostedBy";
 import { AddArgumentDialog } from "@/components/AddArgumentDialog";
 import { EvidenceSupportBar } from "@/components/EvidenceSupportBar";
+import { ReviewBadge } from "@/components/ReviewBadge";
+import { ReviewStatementControl } from "@/components/ReviewStatementControl";
 import { getSession } from "@/lib/session";
 
 interface StatementPageProps {
@@ -19,10 +21,16 @@ export default async function StatementPage({ params }: StatementPageProps) {
     notFound();
   }
 
-  const [allArguments, statementUser] = await Promise.all([
+  const [allArguments, statementUser, review] = await Promise.all([
     getArgumentsByStatementId(statement.id),
     getUserById(statement.userId),
+    getReviewForStatement(statement.id),
   ]);
+
+  const currentUserReview =
+    session?.userId && session.userId !== statement.userId
+      ? await getReviewByUserForStatement(statement.id, session.userId)
+      : null;
   const argumentsFor = allArguments.filter((a) => a.stance === "for");
   const argumentsAgainst = allArguments.filter((a) => a.stance === "against");
 
@@ -71,6 +79,15 @@ export default async function StatementPage({ params }: StatementPageProps) {
             againstArgumentUpvotes={againstArgumentUpvotes}
           />
         </div>
+        <div className="mt-4">
+          <ReviewBadge review={review} />
+        </div>
+        {session?.userId && session.userId !== statement.userId && (
+          <ReviewStatementControl
+            statementId={statement.id}
+            existingReview={currentUserReview}
+          />
+        )}
       </section>
 
       {/* Two-column arguments layout */}

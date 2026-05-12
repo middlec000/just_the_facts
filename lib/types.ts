@@ -48,3 +48,15 @@ export interface Evidence {
   createdAt: string;
   updatedAt?: string;
 }
+
+export type ReviewStatus = "verified" | "not_objective" | "not_falsifiable";
+
+export interface Review {
+  id: number;
+  statementId: string;
+  reviewerId: string;
+  reviewerName: string;
+  status: ReviewStatus;
+  createdAt: string;
+  updatedAt?: string;
+}

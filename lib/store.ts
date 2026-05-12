@@ -4,7 +4,7 @@
  */
 
 import { sql } from "./db";
-import type { Statement, Argument, Evidence, User } from "./types";
+import type { Statement, Argument, Evidence, User, Review, ReviewStatus } from "./types";
 
 // ---------------------------------------------------------------------------
 // Internal row ↔ domain-type mappers
@@ -196,6 +196,71 @@ export async function getUserByUsername(
     username: row.username,
     passwordHash: row.password_hash,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Reviews
+// ---------------------------------------------------------------------------
+
+interface ReviewRow {
+  id: number;
+  statement_id: string;
+  reviewer_id: string;
+  reviewer_name: string;
+  status: ReviewStatus;
+  created_at: string;
+  updated_at: string | null;
+}
+
+function rowToReview(row: ReviewRow): Review {
+  return {
+    id: row.id,
+    statementId: row.statement_id,
+    reviewerId: row.reviewer_id,
+    reviewerName: row.reviewer_name,
+    status: row.status,
+    createdAt: row.created_at,
+    ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
+  };
+}
+
+export async function getReviewForStatement(statementId: string): Promise<Review | null> {
+  const rows = await sql`
+    SELECT r.*, u.name AS reviewer_name
+    FROM reviews r
+    JOIN users u ON u.id = r.reviewer_id
+    WHERE r.statement_id = ${statementId}
+    ORDER BY COALESCE(r.updated_at, r.created_at) DESC
+    LIMIT 1
+  ` as ReviewRow[];
+  return rows[0] ? rowToReview(rows[0]) : null;
+}
+
+export async function getReviewByUserForStatement(
+  statementId: string,
+  userId: string,
+): Promise<Review | null> {
+  const rows = await sql`
+    SELECT r.*, u.name AS reviewer_name
+    FROM reviews r
+    JOIN users u ON u.id = r.reviewer_id
+    WHERE r.statement_id = ${statementId} AND r.reviewer_id = ${userId}
+  ` as ReviewRow[];
+  return rows[0] ? rowToReview(rows[0]) : null;
+}
+
+export async function upsertReview(
+  reviewerId: string,
+  statementId: string,
+  status: ReviewStatus,
+): Promise<void> {
+  const now = new Date().toISOString();
+  await sql`
+    INSERT INTO reviews (statement_id, reviewer_id, status, created_at)
+    VALUES (${statementId}, ${reviewerId}, ${status}, ${now})
+    ON CONFLICT (statement_id, reviewer_id)
+    DO UPDATE SET status = EXCLUDED.status, updated_at = ${now}
+  `;
 }
 
 export async function createUser(

@@ -120,5 +120,19 @@ export async function applySchema(): Promise<void> {
       edited_by   TEXT NOT NULL REFERENCES users(id)
     )
   `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id           SERIAL PRIMARY KEY,
+      statement_id TEXT NOT NULL REFERENCES statements(id) ON DELETE CASCADE,
+      reviewer_id  TEXT NOT NULL REFERENCES users(id),
+      status       TEXT NOT NULL CHECK(status IN ('verified', 'not_objective', 'not_falsifiable')),
+      created_at   TEXT NOT NULL,
+      updated_at   TEXT,
+      UNIQUE(statement_id, reviewer_id)
+    )
+  `;
+
+  await sql`CREATE INDEX IF NOT EXISTS idx_reviews_statement_id ON reviews(statement_id)`;
 }
 
