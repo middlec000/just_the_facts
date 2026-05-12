@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Statement } from "@/lib/types";
+import { Statement, Review } from "@/lib/types";
 import { UpvoteButton } from "@/components/UpvoteButton";
 import { PostedBy } from "@/components/PostedBy";
 import { EvidenceSupportBar } from "@/components/EvidenceSupportBar";
 import { EditStatementDialog } from "@/components/EditStatementDialog";
+import { ReviewBadge } from "@/components/ReviewBadge";
 
 type SortField = "date" | "alpha" | "activity" | "upvotes" | "arguments";
 type SortDir = "asc" | "desc";
@@ -27,6 +28,7 @@ interface StatementWithCounts extends Statement {
   totalArgumentUpvotes: number;
   latestActivityAt: string;
   userName: string;
+  review: Review | null;
 }
 
 interface StatementListProps {
@@ -187,6 +189,9 @@ export function StatementList({ statements, allTags, currentUserId }: StatementL
                   createdAt={statement.createdAt}
                   updatedAt={statement.updatedAt}
                 />
+                <div className="mt-2">
+                  <ReviewBadge review={statement.review} />
+                </div>
               </Link>
               {currentUserId === statement.userId && (
                 <div className="absolute top-4 right-4">

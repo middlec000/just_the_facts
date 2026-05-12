@@ -12,7 +12,7 @@ export default function AboutPage() {
         <section>
           <h2 className="text-xl font-semibold text-neutral-900 mb-2">How it works</h2>
           <p>
-            Every topic on the site is framed as a <strong>Statement</strong> — a clear, falsifiable
+            Every topic on the site is framed as a <strong>Statement</strong> — an objective, falsifiable
             claim. Anyone can add <strong>Arguments</strong> for or against that statement, and
             attach <strong>Evidence</strong> to support their argument. The for and against columns
             are always shown side by side, giving each position equal space and equal visibility.

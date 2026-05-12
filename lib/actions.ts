@@ -2,9 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { addStatement, addArgument, addEvidence, toggleVote, updateStatement, updateArgument, updateEvidence } from "./store";
+import { addStatement, addArgument, addEvidence, toggleVote, updateStatement, updateArgument, updateEvidence, upsertReview, getStatementById } from "./store";
 import { getSession } from "./session";
-import type { Statement, Argument, Evidence } from "./types";
+import type { Statement, Argument, Evidence, ReviewStatus } from "./types";
 
 async function requireUserId(): Promise<string> {
   const session = await getSession();
@@ -166,6 +166,23 @@ export async function editEvidence(id: string, formData: FormData) {
 
   await updateEvidence(id, userId, { title, description, sourceUrl, sourceType });
   revalidatePath(`/arguments/${argumentId}`);
+}
+
+// ---------------------------------------------------------------------------
+// Reviews
+// ---------------------------------------------------------------------------
+
+export async function reviewStatement(
+  statementId: string,
+  status: ReviewStatus,
+): Promise<void> {
+  const userId = await requireUserId();
+  const statement = await getStatementById(statementId);
+  if (!statement) throw new Error("Statement not found.");
+  if (statement.userId === userId) throw new Error("You cannot review your own statement.");
+  await upsertReview(userId, statementId, status);
+  revalidatePath("/");
+  revalidatePath(`/statements/${statementId}`);
 }
 
 // ---------------------------------------------------------------------------

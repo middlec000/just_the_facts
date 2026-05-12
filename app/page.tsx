@@ -1,4 +1,4 @@
-import { getStatements, getArgumentsByStatementId, getEvidenceByArgumentId, getAllTags, getUserById } from "@/lib/store";
+import { getStatements, getArgumentsByStatementId, getEvidenceByArgumentId, getAllTags, getUserById, getReviewForStatement } from "@/lib/store";
 import { StatementList } from "@/components/StatementList";
 import { AddStatementDialog } from "@/components/AddStatementDialog";
 import { getSession } from "@/lib/session";
@@ -12,9 +12,10 @@ export default async function HomePage() {
 
   const statementsWithCounts = await Promise.all(
     statementsList.map(async (statement) => {
-      const [args, user] = await Promise.all([
+      const [args, user, review] = await Promise.all([
         getArgumentsByStatementId(statement.id),
         getUserById(statement.userId),
+        getReviewForStatement(statement.id),
       ]);
       const forArgs = args.filter((a) => a.stance === "for");
       const againstArgs = args.filter((a) => a.stance === "against");
@@ -38,6 +39,7 @@ export default async function HomePage() {
         totalArgumentUpvotes,
         latestActivityAt,
         userName: user?.name ?? "Unknown",
+        review,
       };
     }),
   );
