@@ -35,6 +35,17 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
+### Update Steps
+
+1. Apply schema to the new Neon branch — Run the migration script locally, pointed at the new Neon branch connection string (found in the Neon console under your branch).
+   1. Verify success by checking the Neon console's table browser, or running a quick query. If the new branch already has the schema applied, skip this step.
+1. Update DATABASE_URL in Vercel — In the Vercel dashboard → Project Settings → Environment Variables, update DATABASE_URL (for the Production environment) to the new Neon branch's connection string. Do not redeploy yet — save it and wait.
+1. Update the production branch in Vercel — This depends on your Git workflow:
+   1. Option A (recommended — merge to main): Merge your new code branch into main. Vercel will auto-detect the push and trigger a production deploy using the updated env var.
+   1. Option B (point Vercel at a different branch): In Vercel → Settings → Git → Production Branch, change it to your new branch name, then trigger a manual redeploy.
+1. Monitor the deploy — Watch the Vercel deployment logs. The site will be briefly unavailable during the build/deploy window (~1-2 min). Once the new deploy goes live, both the new code and new DB branch are active simultaneously.
+1. Smoke test — Visit the live site and verify key functionality: login, statement listing (app/statements/[id]/page.tsx), arguments (app/arguments/[id]/page.tsx), and any features that use the new schema columns.
+
 ## Deploy with Tunnel
 
 ```bash
