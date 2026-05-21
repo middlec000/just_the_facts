@@ -29,6 +29,7 @@ describe("middleware", () => {
       const req = makeRequest("/login?from=/statements");
       const res = middleware(req);
       expect(res.headers.get("location")).toBeNull();
+      expect(res.status).toBe(200);
     });
 
     it("allows /signup through without a session cookie", () => {

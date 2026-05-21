@@ -25,4 +25,4 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test -- --ci --forceExit
+        run: npm test -- --ci
