@@ -1,8 +1,10 @@
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { UpvoteButton } from "@/components/UpvoteButton";
 
+const pushMock = jest.fn();
+
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+  useRouter: () => ({ push: pushMock }),
   usePathname: () => "/",
 }));
 
