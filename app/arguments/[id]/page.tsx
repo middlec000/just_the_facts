@@ -81,6 +81,7 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
             targetType="argument"
             initialUpvotes={argument.upvotes}
             revalidatePath={`/arguments/${argument.id}`}
+            currentUserId={session?.userId}
           />
           <PostedBy
             userName={argumentUser?.name ?? "Unknown"}
@@ -115,6 +116,7 @@ export default async function ArgumentPage({ params }: ArgumentPageProps) {
           <AddEvidenceDialog
             argumentId={argument.id}
             statementId={statement?.id ?? ""}
+            currentUserId={session?.userId}
           />
         </div>
         {evidenceList.length > 0 ? (

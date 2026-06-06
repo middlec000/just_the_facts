@@ -181,6 +181,7 @@ export function StatementList({ statements, allTags, currentUserId }: StatementL
                     targetType="statement"
                     initialUpvotes={statement.upvotes}
                     revalidatePath="/"
+                    currentUserId={currentUserId}
                     stopPropagation
                   />
                 </div>

@@ -3,7 +3,8 @@ import { StatementList } from "@/components/StatementList";
 import type { Statement, Review } from "@/lib/types";
 
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: jest.fn() }),
+  useRouter: () => ({ refresh: jest.fn(), push: jest.fn() }),
+  usePathname: () => "/",
 }));
 
 jest.mock("@/lib/actions", () => ({

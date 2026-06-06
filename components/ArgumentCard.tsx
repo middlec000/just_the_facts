@@ -35,6 +35,7 @@ export function ArgumentCard({ argument, userName, currentUserId }: ArgumentCard
             targetType="argument"
             initialUpvotes={argument.upvotes}
             revalidatePath={`/statements/${argument.statementId}`}
+            currentUserId={currentUserId}
             stopPropagation
           />
         </div>

@@ -16,11 +16,10 @@ function makeRequest(
 }
 
 describe("middleware", () => {
-  describe("public paths", () => {
+  describe("public paths (no session required)", () => {
     it("allows /login through without a session cookie", () => {
       const req = makeRequest("/login");
       const res = middleware(req);
-      // NextResponse.next() does not have a Location header
       expect(res.headers.get("location")).toBeNull();
       expect(res.status).toBe(200);
     });
@@ -40,21 +39,26 @@ describe("middleware", () => {
     });
   });
 
-  describe("protected paths", () => {
-    it("redirects to /login when there is no session cookie", () => {
+  describe("content paths (publicly accessible)", () => {
+    it("allows /statements without a session cookie", () => {
       const req = makeRequest("/statements");
       const res = middleware(req);
-      expect(res.status).toBe(307);
-      const location = res.headers.get("location");
-      expect(location).not.toBeNull();
-      expect(location).toContain("/login");
+      expect(res.status).toBe(200);
+      expect(res.headers.get("location")).toBeNull();
     });
 
-    it("includes the original path in the redirect query string", () => {
+    it("allows /statements/:id without a session cookie", () => {
       const req = makeRequest("/statements/stmt-1");
       const res = middleware(req);
-      const location = res.headers.get("location") ?? "";
-      expect(location).toContain("from=");
+      expect(res.status).toBe(200);
+      expect(res.headers.get("location")).toBeNull();
+    });
+
+    it("allows the root path without a session cookie", () => {
+      const req = makeRequest("/");
+      const res = middleware(req);
+      expect(res.status).toBe(200);
+      expect(res.headers.get("location")).toBeNull();
     });
 
     it("allows through when a valid session cookie is present", () => {
@@ -63,17 +67,8 @@ describe("middleware", () => {
         "jtf_session=someuser:somehash",
       );
       const res = middleware(req);
-      // Should not redirect
       expect(res.status).toBe(200);
       expect(res.headers.get("location")).toBeNull();
-    });
-
-    it("redirects to /login for the root path without a session", () => {
-      const req = makeRequest("/");
-      const res = middleware(req);
-      expect(res.status).toBe(307);
-      const location = res.headers.get("location") ?? "";
-      expect(location).toContain("/login");
     });
   });
 });

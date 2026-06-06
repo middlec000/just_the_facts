@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { DialogShell } from "./DialogShell";
 import { createEvidence } from "@/lib/actions";
 import type { SourceType } from "@/lib/types";
@@ -23,16 +23,19 @@ interface AddEvidenceDialogProps {
   argumentId: string;
   /** Passed through to revalidate the parent statement page too. */
   statementId: string;
+  currentUserId?: string;
 }
 
 export function AddEvidenceDialog({
   argumentId,
   statementId,
+  currentUserId,
 }: AddEvidenceDialogProps) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const pathname = usePathname();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -52,7 +55,13 @@ export function AddEvidenceDialog({
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          if (!currentUserId) {
+            router.push(`/login?from=${encodeURIComponent(pathname)}`);
+            return;
+          }
+          setOpen(true);
+        }}
         className="px-3 py-1.5 rounded-lg text-xs font-medium border border-neutral-300 text-neutral-600 bg-white hover:bg-neutral-50 transition-colors"
       >
         + Add Evidence

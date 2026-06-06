@@ -2,7 +2,8 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { AddEvidenceDialog } from "@/components/AddEvidenceDialog";
 
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: jest.fn() }),
+  useRouter: () => ({ refresh: jest.fn(), push: jest.fn() }),
+  usePathname: () => "/",
 }));
 
 jest.mock("@/lib/actions", () => ({
@@ -17,19 +18,19 @@ describe("AddEvidenceDialog", () => {
   });
 
   it("renders the '+ Add Evidence' trigger button", () => {
-    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" />);
+    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" currentUserId="user-1" />);
     expect(
       screen.getByRole("button", { name: /\+ Add Evidence/i }),
     ).toBeInTheDocument();
   });
 
   it("does not show the dialog initially", () => {
-    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" />);
+    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" currentUserId="user-1" />);
     expect(screen.queryByText("Add Evidence")).not.toBeInTheDocument();
   });
 
   it("opens the dialog when the trigger button is clicked", () => {
-    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" />);
+    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" currentUserId="user-1" />);
     fireEvent.click(
       screen.getByRole("button", { name: /\+ Add Evidence/i }),
     );
@@ -37,7 +38,7 @@ describe("AddEvidenceDialog", () => {
   });
 
   it("closes the dialog when the Cancel button is clicked", () => {
-    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" />);
+    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" currentUserId="user-1" />);
     fireEvent.click(
       screen.getByRole("button", { name: /\+ Add Evidence/i }),
     );
@@ -46,7 +47,7 @@ describe("AddEvidenceDialog", () => {
   });
 
   it("renders Title, Description, and Source type fields inside the dialog", () => {
-    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" />);
+    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" currentUserId="user-1" />);
     fireEvent.click(
       screen.getByRole("button", { name: /\+ Add Evidence/i }),
     );
@@ -56,7 +57,7 @@ describe("AddEvidenceDialog", () => {
   });
 
   it("renders all source type options", () => {
-    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" />);
+    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" currentUserId="user-1" />);
     fireEvent.click(
       screen.getByRole("button", { name: /\+ Add Evidence/i }),
     );
@@ -73,7 +74,7 @@ describe("AddEvidenceDialog", () => {
   });
 
   it("calls createEvidence when the form is submitted", async () => {
-    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" />);
+    render(<AddEvidenceDialog argumentId="arg-1" statementId="stmt-1" currentUserId="user-1" />);
     fireEvent.click(
       screen.getByRole("button", { name: /\+ Add Evidence/i }),
     );

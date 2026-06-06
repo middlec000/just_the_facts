@@ -1,6 +1,11 @@
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { UpvoteButton } from "@/components/UpvoteButton";
 
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn() }),
+  usePathname: () => "/",
+}));
+
 jest.mock("@/lib/actions", () => ({
   castUpvote: jest.fn().mockResolvedValue({ active: true }),
 }));
@@ -55,6 +60,7 @@ describe("UpvoteButton", () => {
         targetType="statement"
         initialUpvotes={5}
         revalidatePath="/"
+        currentUserId="user-1"
       />,
     );
     await act(async () => {
@@ -72,6 +78,7 @@ describe("UpvoteButton", () => {
           targetType="statement"
           initialUpvotes={5}
           revalidatePath="/"
+          currentUserId="user-1"
           stopPropagation
         />
       </div>,

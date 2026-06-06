@@ -1,6 +1,7 @@
 "use client";
 
 import { useOptimistic, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { castUpvote } from "@/lib/actions";
 
 interface UpvoteButtonProps {
@@ -8,6 +9,7 @@ interface UpvoteButtonProps {
   targetType: "statement" | "argument";
   initialUpvotes: number;
   revalidatePath: string;
+  currentUserId?: string;
   /** Stop click events from bubbling (useful when UpvoteButton is inside a <Link>) */
   stopPropagation?: boolean;
 }
@@ -17,10 +19,13 @@ export function UpvoteButton({
   targetType,
   initialUpvotes,
   revalidatePath,
+  currentUserId,
   stopPropagation = false,
 }: UpvoteButtonProps) {
   const [upvoted, setUpvoted] = useState(false);
   const [, startTransition] = useTransition();
+  const router = useRouter();
+  const pathname = usePathname();
   // useOptimistic applies the delta immediately and reverts to the real
   // initialUpvotes (refreshed by revalidatePath) once the transition settles,
   // preventing the double-count that occurred when initialUpvotes was updated
@@ -33,6 +38,10 @@ export function UpvoteButton({
   function handleUpvote(e: React.MouseEvent) {
     if (stopPropagation) e.preventDefault();
     e.stopPropagation();
+    if (!currentUserId) {
+      router.push(`/login?from=${encodeURIComponent(pathname)}`);
+      return;
+    }
     const next = !upvoted;
     setUpvoted(next);
     startTransition(async () => {

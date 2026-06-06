@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { DialogShell } from "./DialogShell";
 import { createArgument } from "@/lib/actions";
 import type { Stance } from "@/lib/types";
@@ -14,17 +14,20 @@ interface AddArgumentDialogProps {
   statementId: string;
   /** Pre-select the stance (used when clicking "Add" inside a column). */
   defaultStance?: Stance;
+  currentUserId?: string;
 }
 
 export function AddArgumentDialog({
   statementId,
   defaultStance = "for",
+  currentUserId,
 }: AddArgumentDialogProps) {
   const [open, setOpen] = useState(false);
   const [stance, setStance] = useState<Stance>(defaultStance);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const pathname = usePathname();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -48,6 +51,10 @@ export function AddArgumentDialog({
     <>
       <button
         onClick={() => {
+          if (!currentUserId) {
+            router.push(`/login?from=${encodeURIComponent(pathname)}`);
+            return;
+          }
           setStance(defaultStance);
           setOpen(true);
         }}

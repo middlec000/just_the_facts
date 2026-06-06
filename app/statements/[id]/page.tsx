@@ -99,7 +99,7 @@ export default async function StatementPage({ params }: StatementPageProps) {
             Arguments For ({argumentsFor.length})
           </h2>
           <div className="mb-4">
-            <AddArgumentDialog statementId={statement.id} defaultStance="for" />
+            <AddArgumentDialog statementId={statement.id} defaultStance="for" currentUserId={session?.userId} />
           </div>
           <div className="space-y-3">
             {argumentsFor.length > 0 ? (
@@ -126,7 +126,7 @@ export default async function StatementPage({ params }: StatementPageProps) {
             Arguments Against ({argumentsAgainst.length})
           </h2>
           <div className="mb-4">
-            <AddArgumentDialog statementId={statement.id} defaultStance="against" />
+            <AddArgumentDialog statementId={statement.id} defaultStance="against" currentUserId={session?.userId} />
           </div>
           <div className="space-y-3">
             {argumentsAgainst.length > 0 ? (
