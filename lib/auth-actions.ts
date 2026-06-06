@@ -22,7 +22,6 @@ function safeRedirect(from: string | null): string {
   if (from.includes("\\")) return "/";
   return from;
 }
-}
 
 function generateSalt(): string {
   return randomBytes(16).toString("hex");
