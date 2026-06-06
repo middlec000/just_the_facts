@@ -17,10 +17,11 @@ export interface AuthState {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Validate a `from` redirect path to prevent open redirects. */
 function safeRedirect(from: string | null): string {
   if (!from || !from.startsWith("/") || from.startsWith("//")) return "/";
+  if (from.includes("\\")) return "/";
   return from;
+}
 }
 
 function generateSalt(): string {
