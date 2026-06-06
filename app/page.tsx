@@ -53,7 +53,7 @@ export default async function HomePage() {
             Examine statements through structured arguments and evidence.
           </p>
         </div>
-        <AddStatementDialog />
+        <AddStatementDialog currentUserId={session?.userId} />
       </section>
 
       <StatementList statements={statementsWithCounts} allTags={allTags} currentUserId={session?.userId} />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { DialogShell } from "./DialogShell";
 import { createStatement } from "@/lib/actions";
 
@@ -9,11 +9,12 @@ const inputCls =
   "w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400";
 const labelCls = "block text-sm font-medium text-neutral-700 mb-1";
 
-export function AddStatementDialog() {
+export function AddStatementDialog({ currentUserId }: { currentUserId?: string }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const pathname = usePathname();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,7 +34,13 @@ export function AddStatementDialog() {
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          if (!currentUserId) {
+            router.push(`/login?from=${encodeURIComponent(pathname)}`);
+            return;
+          }
+          setOpen(true);
+        }}
         className="px-4 py-2 rounded-lg bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-700 transition-colors"
       >
         + Add Statement

@@ -4,7 +4,8 @@ import type { Argument } from "@/lib/types";
 
 // Mock dependencies that use next/navigation or server actions
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: jest.fn() }),
+  useRouter: () => ({ refresh: jest.fn(), push: jest.fn() }),
+  usePathname: () => "/",
 }));
 
 jest.mock("@/components/EditArgumentDialog", () => ({

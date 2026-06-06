@@ -1,6 +1,13 @@
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { UpvoteButton } from "@/components/UpvoteButton";
 
+const pushMock = jest.fn();
+
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: pushMock }),
+  usePathname: () => "/",
+}));
+
 jest.mock("@/lib/actions", () => ({
   castUpvote: jest.fn().mockResolvedValue({ active: true }),
 }));
@@ -55,12 +62,29 @@ describe("UpvoteButton", () => {
         targetType="statement"
         initialUpvotes={5}
         revalidatePath="/"
+        currentUserId="user-1"
       />,
     );
     await act(async () => {
       fireEvent.click(screen.getByRole("button"));
     });
     expect(castUpvote).toHaveBeenCalledWith("statement", "stmt-1", "/");
+  });
+
+  it("redirects to login and does not cast upvote when user is logged out", async () => {
+    render(
+      <UpvoteButton
+        id="stmt-1"
+        targetType="statement"
+        initialUpvotes={5}
+        revalidatePath="/"
+      />,
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button"));
+    });
+    expect(pushMock).toHaveBeenCalledWith("/login?from=%2F");
+    expect(castUpvote).not.toHaveBeenCalled();
   });
 
   it("stops event propagation when stopPropagation is true", async () => {
@@ -72,6 +96,7 @@ describe("UpvoteButton", () => {
           targetType="statement"
           initialUpvotes={5}
           revalidatePath="/"
+          currentUserId="user-1"
           stopPropagation
         />
       </div>,

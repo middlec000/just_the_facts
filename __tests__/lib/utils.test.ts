@@ -16,7 +16,7 @@ describe("formatDate", () => {
   });
 
   it("handles a date at the start of the year", () => {
-    const result = formatDate("2024-01-01T00:00:00Z");
+    const result = formatDate("2024-01-01T12:00:00Z");
     expect(result).toMatch(/Jan/);
     expect(result).toMatch(/1/);
     expect(result).toMatch(/2024/);
