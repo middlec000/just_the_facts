@@ -1,8 +1,11 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { AddArgumentDialog } from "@/components/AddArgumentDialog";
 
+const pushMock = jest.fn();
+const refreshMock = jest.fn();
+
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: jest.fn(), push: jest.fn() }),
+  useRouter: () => ({ refresh: refreshMock, push: pushMock }),
   usePathname: () => "/",
 }));
 
@@ -33,6 +36,13 @@ describe("AddArgumentDialog", () => {
     render(<AddArgumentDialog statementId="stmt-1" currentUserId="user-1" />);
     fireEvent.click(screen.getByRole("button", { name: /\+ Add Argument/i }));
     expect(screen.getByText("Add an Argument")).toBeInTheDocument();
+  });
+
+  it("redirects to login and keeps dialog closed when user is logged out", () => {
+    render(<AddArgumentDialog statementId="stmt-1" />);
+    fireEvent.click(screen.getByRole("button", { name: /\+ Add Argument/i }));
+    expect(pushMock).toHaveBeenCalledWith("/login?from=%2F");
+    expect(screen.queryByText("Add an Argument")).not.toBeInTheDocument();
   });
 
   it("closes the dialog when the Cancel button is clicked", () => {

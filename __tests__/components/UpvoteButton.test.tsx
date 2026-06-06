@@ -71,6 +71,22 @@ describe("UpvoteButton", () => {
     expect(castUpvote).toHaveBeenCalledWith("statement", "stmt-1", "/");
   });
 
+  it("redirects to login and does not cast upvote when user is logged out", async () => {
+    render(
+      <UpvoteButton
+        id="stmt-1"
+        targetType="statement"
+        initialUpvotes={5}
+        revalidatePath="/"
+      />,
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button"));
+    });
+    expect(pushMock).toHaveBeenCalledWith("/login?from=%2F");
+    expect(castUpvote).not.toHaveBeenCalled();
+  });
+
   it("stops event propagation when stopPropagation is true", async () => {
     const parentClickHandler = jest.fn();
     render(

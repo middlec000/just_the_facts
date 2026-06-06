@@ -1,8 +1,11 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { AddStatementDialog } from "@/components/AddStatementDialog";
 
+const pushMock = jest.fn();
+const refreshMock = jest.fn();
+
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: jest.fn(), push: jest.fn() }),
+  useRouter: () => ({ refresh: refreshMock, push: pushMock }),
   usePathname: () => "/",
 }));
 
@@ -33,6 +36,13 @@ describe("AddStatementDialog", () => {
     render(<AddStatementDialog currentUserId="user-1" />);
     fireEvent.click(screen.getByRole("button", { name: /\+ Add Statement/i }));
     expect(screen.getByText("Add a Statement")).toBeInTheDocument();
+  });
+
+  it("redirects to login and keeps dialog closed when user is logged out", () => {
+    render(<AddStatementDialog />);
+    fireEvent.click(screen.getByRole("button", { name: /\+ Add Statement/i }));
+    expect(pushMock).toHaveBeenCalledWith("/login?from=%2F");
+    expect(screen.queryByText("Add a Statement")).not.toBeInTheDocument();
   });
 
   it("closes the dialog when the close button is clicked", () => {
