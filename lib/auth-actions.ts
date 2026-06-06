@@ -17,6 +17,12 @@ export interface AuthState {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Validate a `from` redirect path to prevent open redirects. */
+function safeRedirect(from: string | null): string {
+  if (!from || !from.startsWith("/") || from.startsWith("//")) return "/";
+  return from;
+}
+
 function generateSalt(): string {
   return randomBytes(16).toString("hex");
 }
@@ -81,7 +87,7 @@ export async function signUp(
   await createUser(id, username, username, passwordHash);
 
   await setSession(id);
-  redirect("/");
+  redirect(safeRedirect(formData.get("from") as string | null));
 }
 
 /**
@@ -105,7 +111,7 @@ export async function logIn(
     return { error: "Invalid username or password." };
 
   await setSession(user.id);
-  redirect("/");
+  redirect(safeRedirect(formData.get("from") as string | null));
 }
 
 /**

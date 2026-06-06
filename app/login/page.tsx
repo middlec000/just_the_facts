@@ -1,11 +1,14 @@
 "use client";
 
 import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { logIn } from "../../lib/auth-actions";
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(logIn, undefined);
+  const searchParams = useSearchParams();
+  const from = searchParams.get("from");
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
@@ -15,6 +18,7 @@ export default function LoginPage() {
         </h1>
 
         <form action={formAction} className="space-y-4">
+          {from && <input type="hidden" name="from" value={from} />}
           {state?.error && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
               {state.error}
@@ -66,7 +70,7 @@ export default function LoginPage() {
 
         <p className="mt-4 text-sm text-neutral-600 text-center">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="font-medium text-neutral-900 underline">
+          <Link href={from ? `/signup?from=${encodeURIComponent(from)}` : "/signup"} className="font-medium text-neutral-900 underline">
             Sign up
           </Link>
         </p>
