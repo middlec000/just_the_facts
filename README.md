@@ -2,6 +2,8 @@
 
 A platform for exploring controversial topics by presenting both sides of an argument on equal footing — no algorithmic amplification, no hidden bias, just structured debate.
 
+Visit the published website at https://just-the-facts.vercel.app/
+
 ## About
 
 Just the Facts allows users to:
